@@ -1,0 +1,28 @@
+version: '3'
+
+tasks:
+  build-auth:
+    cmds:
+      - |
+        BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+        COMMIT=$(git rev-parse HEAD)
+        COUNT_COMMIT=$(git rev-list --count HEAD)
+        DATE=$(date +"%Y-%m-%d_%H:%M:%S")
+        go build -ldflags "-X main.buildVersion=v0.${BRANCH_NAME}.${COUNT_COMMIT} -X main.buildDate=${DATE} -X main.buildCommit=${COMMIT}" -o cmd/auth/auth cmd/auth/main.go
+
+  protogen-auth:
+    cmds:
+      - |
+        protoc --go_out=. --go_opt=paths=source_relative \
+        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+        internal/auth/proto/auth.proto
+  protogen-storage:
+    cmds:
+      - |
+        protoc --go_out=. --go_opt=paths=source_relative \
+        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+        internal/storage/proto/storage.proto
+  protogen:
+    cmds:
+      - task: protogen-auth
+      - task: protogen-storage
