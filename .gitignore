@@ -1,0 +1,5 @@
+cmd/api/api
+cmd/auth/auth
+cmd/storage/storage
+cmd/sync/sync
+

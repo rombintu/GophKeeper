@@ -4,7 +4,7 @@ import "os"
 
 type AuthConfig struct {
 	Config
-	AuthGRPCPort string
+	Address string
 }
 
 func NewAuthConfig(base Config) AuthConfig {
@@ -14,5 +14,5 @@ func NewAuthConfig(base Config) AuthConfig {
 }
 
 func (c *AuthConfig) Load() {
-	c.AuthGRPCPort = os.Getenv("AUTH_GRPC_PORT")
+	c.Address = os.Getenv("AUTH_GRPC_LISTEN")
 }
