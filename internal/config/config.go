@@ -9,8 +9,12 @@ import (
 )
 
 type Config struct {
-	Env                 string        `env-default:"local"`
-	HealthCheckDuration time.Duration `env-default:"10s"`
+	Env                   string        `env-default:"local"`
+	HealthCheckDuration   time.Duration `env-default:"10s"`
+	AuthServiceAddress    string        `env-default:":3201"`
+	ApiServiceAddress     string        `env-default:":3202"`
+	StorageServiceAddress string        `env-default:":3203"`
+	SyncServiceAddress    string        `env-default:":3204"`
 }
 
 func NewConfig() (Config, error) {
@@ -28,6 +32,11 @@ func NewConfig() (Config, error) {
 	} else {
 		cfg.HealthCheckDuration = dur
 	}
+
+	cfg.AuthServiceAddress = os.Getenv("AUTH_GRPC_LISTEN")
+	cfg.ApiServiceAddress = os.Getenv("API_GRPC_LISTEN")
+	cfg.StorageServiceAddress = os.Getenv("STORAGE_GRPC_LISTEN")
+	cfg.SyncServiceAddress = os.Getenv("SYNC_GRPC_LISTEN")
 
 	return cfg, nil
 }

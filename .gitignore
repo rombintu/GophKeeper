@@ -3,3 +3,4 @@ cmd/auth/auth
 cmd/storage/storage
 cmd/sync/sync
 
+.vscode

@@ -1,6 +1,6 @@
 package common
 
-import "fmt"
+import "log/slog"
 
 func ifEmptyOpt(opt string) string {
 	if opt == "" {
@@ -9,10 +9,11 @@ func ifEmptyOpt(opt string) string {
 	return opt
 }
 
-func Version(buildDate, buildVersion, buildCommit string) string {
-	return fmt.Sprintf("Build date: %s\nBuild version: %s\nBuild commit: %s",
-		ifEmptyOpt(buildDate),
-		ifEmptyOpt(buildVersion),
-		ifEmptyOpt(buildCommit),
+func Version(buildDate, buildVersion, buildCommit, binary string) {
+	slog.Info(
+		"Init", slog.String("Binary", ifEmptyOpt(binary)),
+		slog.String("Build version", ifEmptyOpt(buildVersion)),
+		slog.String("Build date", ifEmptyOpt(buildDate)),
+		slog.String("Build commit", ifEmptyOpt(buildCommit)),
 	)
 }

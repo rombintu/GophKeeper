@@ -4,7 +4,6 @@ import "os"
 
 type StorageConfig struct {
 	Config
-	Address    string
 	DriverPath string
 }
 
@@ -15,6 +14,5 @@ func NewStorageConfig(base Config) StorageConfig {
 }
 
 func (c *StorageConfig) Load() {
-	c.Address = os.Getenv("STORAGE_GRPC_LISTEN")
 	c.DriverPath = os.Getenv("STORAGE_DRIVER_PATH")
 }

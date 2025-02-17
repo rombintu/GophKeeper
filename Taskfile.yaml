@@ -9,20 +9,13 @@ tasks:
         COUNT_COMMIT=$(git rev-list --count HEAD)
         DATE=$(date +"%Y-%m-%d_%H:%M:%S")
         go build -ldflags "-X main.buildVersion=v0.${BRANCH_NAME}.${COUNT_COMMIT} -X main.buildDate=${DATE} -X main.buildCommit=${COMMIT}" -o cmd/auth/auth cmd/auth/main.go
-
-  protogen-auth:
+  mockgen:
     cmds:
-      - |
-        protoc --go_out=. --go_opt=paths=source_relative \
-        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-        internal/auth/proto/auth.proto
-  protogen-storage:
-    cmds:
-      - |
-        protoc --go_out=. --go_opt=paths=source_relative \
-        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-        internal/storage/proto/storage.proto
+      - mockgen -destination=internal/mocks/storage/mock_driver.go -package=mocks github.com/rombintu/GophKeeper/internal/storage Driver
+      - mockgen -destination=internal/mocks/storage/mock_grpc.go -package=mocks github.com/rombintu/GophKeeper/internal/proto StorageClient
   protogen:
     cmds:
-      - task: protogen-auth
-      - task: protogen-storage
+      - |
+        protoc --go_out=. --go_opt=paths=source_relative \
+        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+        internal/proto/base.proto

@@ -8,17 +8,15 @@ import (
 
 	"github.com/rombintu/GophKeeper/internal"
 	"github.com/rombintu/GophKeeper/internal/config"
-	"github.com/rombintu/GophKeeper/internal/models/auth"
-	models "github.com/rombintu/GophKeeper/internal/models/storage"
+	pb "github.com/rombintu/GophKeeper/internal/proto"
 	"github.com/rombintu/GophKeeper/internal/storage/drivers"
-	pb "github.com/rombintu/GophKeeper/internal/storage/proto"
 	"google.golang.org/grpc"
 )
 
 const (
 	memDriver   = "mem"
 	pgxDriver   = "pgx" // TODO
-	serviceName = "StorageService"
+	ServiceName = "StorageService"
 )
 
 func parseDriver(driverPath string) (string, string) {
@@ -34,12 +32,12 @@ func parseDriver(driverPath string) (string, string) {
 }
 
 type Driver interface {
-	UserGet(user auth.User) (auth.User, error)
-	UserCreate(user auth.User) error
+	UserGet(user *pb.User) error
+	UserCreate(user *pb.User) error
 
-	SecretGet(userID int64) (models.Secret, error)
-	SecretCreate(secret models.Secret) error
-	SecretsGet(userID int64) ([]models.Secret, error)
+	SecretGet(userID int64) (*pb.Secret, error)
+	SecretCreate(secret *pb.Secret) error
+	SecretsGet(userID int64) ([]*pb.Secret, error)
 
 	Ping() error
 }
@@ -82,21 +80,21 @@ func (s *StorageService) HealthCheck(duration time.Duration) {
 			if err := s.driver.Ping(); err != nil {
 				slog.Error("ping database error", slog.String("error", err.Error()))
 			}
-			slog.Debug("health check service", slog.String("service", serviceName))
+			slog.Debug("health check service", slog.String("service", ServiceName))
 		}
 	}
 }
 
 func (s *StorageService) Start() error {
-	listen, err := net.Listen(internal.TCP, s.config.Address)
+	listen, err := net.Listen(internal.TCP, s.config.StorageServiceAddress)
 	if err != nil {
 		return err
 	}
 	server := grpc.NewServer()
 	pb.RegisterStorageServer(server, s)
 	slog.Info("Service is starting",
-		slog.String("service", serviceName),
-		slog.String("address", s.config.Address),
+		slog.String("service", ServiceName),
+		slog.String("address", s.config.StorageServiceAddress),
 	)
 	return server.Serve(listen)
 }

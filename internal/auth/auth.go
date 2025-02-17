@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/rombintu/GophKeeper/internal"
-	pb "github.com/rombintu/GophKeeper/internal/auth/proto"
 	"github.com/rombintu/GophKeeper/internal/config"
+	pb "github.com/rombintu/GophKeeper/internal/proto"
 	"google.golang.org/grpc"
 )
 
 const (
-	serviceName = "AuthService"
+	ServiceName = "AuthService"
 )
 
 type AuthService struct {
@@ -34,21 +34,21 @@ func (s *AuthService) HealthCheck(duration time.Duration) {
 		select {
 		case <-ticker.C:
 			// TODO: отправка в API статус сервиса
-			slog.Debug("health check service", slog.String("service", serviceName))
+			slog.Debug("health check service", slog.String("service", ServiceName))
 		}
 	}
 }
 
 func (s *AuthService) Start() error {
-	listen, err := net.Listen(internal.TCP, s.config.Address)
+	listen, err := net.Listen(internal.TCP, s.config.AuthServiceAddress)
 	if err != nil {
 		return err
 	}
 	server := grpc.NewServer()
 	pb.RegisterAuthServer(server, s)
 	slog.Info("Service is starting",
-		slog.String("service", serviceName),
-		slog.String("address", s.config.Address),
+		slog.String("service", ServiceName),
+		slog.String("address", s.config.AuthServiceAddress),
 	)
 	return server.Serve(listen)
 }

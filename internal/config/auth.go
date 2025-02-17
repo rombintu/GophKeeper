@@ -1,10 +1,7 @@
 package config
 
-import "os"
-
 type AuthConfig struct {
 	Config
-	Address string
 }
 
 func NewAuthConfig(base Config) AuthConfig {
@@ -14,5 +11,4 @@ func NewAuthConfig(base Config) AuthConfig {
 }
 
 func (c *AuthConfig) Load() {
-	c.Address = os.Getenv("AUTH_GRPC_LISTEN")
 }
