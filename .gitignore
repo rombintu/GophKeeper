@@ -4,3 +4,6 @@ cmd/storage/storage
 cmd/sync/sync
 
 .vscode
+
+profiles/*
+!profiles/.gitkeep

@@ -2,6 +2,7 @@ package drivers
 
 import (
 	"errors"
+	"log/slog"
 
 	pb "github.com/rombintu/GophKeeper/internal/proto"
 )
@@ -12,17 +13,17 @@ type MemoryDriver struct {
 }
 
 func (md *MemoryDriver) UserGet(user *pb.User) error {
-	found := false
 	for _, u := range md.Users {
 		if user.GetEmail() == u.GetEmail() {
+			slog.Debug("founded user",
+				slog.String("email", u.GetEmail()),
+				slog.String("fingerprint", string(u.GetHexKeys())))
 			user.HexKeys = u.GetHexKeys()
-			found = true
+			return nil
 		}
 	}
-	if !found {
-		return errors.New("user not found")
-	}
-	return nil
+	return errors.New("user not found")
+
 }
 
 func (md *MemoryDriver) UserCreate(user *pb.User) error {
@@ -32,6 +33,9 @@ func (md *MemoryDriver) UserCreate(user *pb.User) error {
 		}
 	}
 	md.Users = append(md.Users, user)
+	slog.Debug("user created",
+		slog.String("email", user.GetEmail()),
+		slog.String("fingerprint", string(user.GetHexKeys())))
 	return nil
 }
 

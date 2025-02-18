@@ -8,6 +8,7 @@ import (
 	pb "github.com/rombintu/GophKeeper/internal/proto"
 	"github.com/rombintu/GophKeeper/internal/storage"
 	"github.com/rombintu/GophKeeper/lib/common"
+	"github.com/rombintu/GophKeeper/lib/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -35,10 +36,15 @@ func (s *AuthService) Register(ctx context.Context, in *pb.UserRequest) (*pb.Aut
 		slog.Error("message", slog.String("func", "AuthService.Register"), slog.String("error", err.Error()))
 		return nil, err
 	}
-	// TODO: Генерация токена
-	r := pb.AuthResponse{
-		Token: "123",
+
+	token, err := jwt.NewToken(in.User, s.config.Secret, s.config.TokenExp)
+	if err != nil {
+		return nil, err
 	}
+	r := pb.AuthResponse{
+		Token: token,
+	}
+
 	return &r, err
 }
 
@@ -59,15 +65,21 @@ func (s *AuthService) Login(ctx context.Context, in *pb.UserRequest) (*pb.AuthRe
 	}
 	defer conn.Close()
 	storageClient := pb.NewStorageClient(conn)
-	storageResp, err := storageClient.UserGet(ctx, in)
-	if err != nil {
-		slog.Error("message", slog.String("func", "AuthService.Register"), slog.String("error", err.Error()))
+
+	newUserRequest := pb.UserRequest{User: &pb.User{Email: in.User.GetEmail()}}
+	if _, err := storageClient.UserGet(ctx, &newUserRequest); err != nil {
+		slog.Error("message", slog.String("func", "AuthService.Login"), slog.String("error", err.Error()))
 		return nil, err
 	}
-	// TODO: Сравнение и генерация токена
+
 	r := pb.AuthResponse{}
-	if reflect.DeepEqual(storageResp.User.GetHexKeys(), in.User.GetHexKeys()) {
-		r.Token = "1234"
+	if reflect.DeepEqual(newUserRequest.User.GetHexKeys(), in.User.GetHexKeys()) {
+		token, err := jwt.NewToken(in.User, s.config.Secret, s.config.TokenExp)
+		if err != nil {
+			slog.Error("message", slog.String("func", "AuthService.Login"), slog.String("error", err.Error()))
+			return nil, err
+		}
+		r.Token = token
 	} else {
 		return nil, status.Error(codes.InvalidArgument, "user keys are not equal")
 	}
