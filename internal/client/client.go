@@ -1,53 +1,24 @@
 package client
 
 import (
-	"context"
-	"errors"
-
 	"github.com/rombintu/GophKeeper/internal/proto"
+	"github.com/rombintu/GophKeeper/lib/connections"
 )
 
-type PublicClient interface {
-	BaseClient
-	Registration() error
-	Login() error
-	GetToken() string
+type ClientPool struct {
+	pool *connections.ConnPool
 }
 
-func NewPublicClient(cfg Config) PublicClient {
-	return &SimpleClient{Config: cfg}
-}
-
-func (c *SimpleClient) CheckProfile() error {
-	if c.Config.Profile.Email == "" {
-		return errors.New("the Email address is not specified in the profile")
+func NewClientPool(pool *connections.ConnPool) *ClientPool {
+	return &ClientPool{
+		pool: pool,
 	}
-	if c.Config.Profile.HexKeys == nil {
-		return errors.New("the key was not found in the profile")
-	}
-	return nil
 }
 
-func (c *SimpleClient) Login() error {
-	client := proto.NewAuthClient(c.Conn)
-	resp, err := client.Login(context.Background(), &proto.UserRequest{User: c.Config.Profile})
+func (c *ClientPool) NewAuthClient(addr string) (proto.AuthClient, error) {
+	conn, err := c.pool.Get(addr)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	c.Config.token = resp.Token
-	return nil
-}
-
-func (c *SimpleClient) Registration() error {
-	client := proto.NewAuthClient(c.Conn)
-	resp, err := client.Register(context.Background(), &proto.UserRequest{User: c.Config.Profile})
-	if err != nil {
-		return err
-	}
-	c.Config.token = resp.Token
-	return nil
-}
-
-func (c *SimpleClient) GetToken() string {
-	return c.Config.token
+	return proto.NewAuthClient(conn), nil
 }

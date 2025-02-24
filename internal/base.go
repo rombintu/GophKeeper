@@ -12,4 +12,5 @@ type Service interface {
 	HealthCheck(duration time.Duration) // Пишет в логи состояние сервиса
 	Start() error
 	Shutdown() error
+	// Allow() bool
 }

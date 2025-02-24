@@ -8,6 +8,8 @@ import (
 	"github.com/rombintu/GophKeeper/internal"
 	"github.com/rombintu/GophKeeper/internal/config"
 	pb "github.com/rombintu/GophKeeper/internal/proto"
+	"github.com/rombintu/GophKeeper/lib/common"
+	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 )
 
@@ -44,7 +46,11 @@ func (s *AuthService) Start() error {
 	if err != nil {
 		return err
 	}
-	server := grpc.NewServer()
+	// TODO: конфигурация и унификация для сервисов
+	limiter := rate.NewLimiter(rate.Limit(10), 20)
+	server := grpc.NewServer(grpc.UnaryInterceptor(
+		common.RateLimitInterceptor(limiter),
+	))
 	pb.RegisterAuthServer(server, s)
 	slog.Info("Service is starting",
 		slog.String("service", ServiceName),

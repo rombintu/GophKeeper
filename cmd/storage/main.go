@@ -3,6 +3,8 @@ package main
 import (
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/rombintu/GophKeeper/internal/config"
 	"github.com/rombintu/GophKeeper/internal/storage"
@@ -28,7 +30,18 @@ func main() {
 	common.Version(buildVersion, buildDate, buildCommit, "storage")
 	service := storage.NewStorageService(cfg)
 	go service.HealthCheck(cfg.HealthCheckDuration)
-	if err := service.Start(); err != nil {
-		panic(err)
-	}
+	go func() {
+		if err := service.Start(); err != nil {
+			panic(err)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+
+	// Waiting for SIGINT (pkill -2) or SIGTERM
+	<-stop
+
+	service.Shutdown()
+	slog.Info("Service is shutdown", slog.String("service", "storage"))
 }

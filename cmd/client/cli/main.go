@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log/slog"
 	"os"
 
 	"github.com/rombintu/GophKeeper/internal/client"
+	"github.com/rombintu/GophKeeper/internal/proto"
+	"github.com/rombintu/GophKeeper/lib/connections"
 	"github.com/rombintu/GophKeeper/lib/crypto"
 	"github.com/rombintu/GophKeeper/lib/logger"
 )
@@ -14,7 +17,7 @@ func main() {
 	logger.InitLogger("local")
 	// TODO: сделать чтобы запоминал ввод ключа и адреса
 	privateKeyPath := flag.String("key", "", "Path to master GPG key")
-	address := flag.String("address", "localhost:3201", "Address to AuthService")
+	addressAuth := flag.String("address", "localhost:3201", "Address to AuthService")
 	action := flag.String("action", "profile", "Action")
 	flag.Parse()
 
@@ -30,35 +33,30 @@ func main() {
 		os.Exit(0)
 	}
 
-	cfg := client.Config{
-		Address: *address,
-		Profile: user,
+	// Создание пула соединений, из него создаются клиенты
+	clientPool := client.NewClientPool(connections.NewConnPool())
+	authClient, err := clientPool.NewAuthClient(*addressAuth)
+	if err != nil {
+		slog.Error("get connection to auth service", slog.String("error", err.Error()))
+		os.Exit(0)
 	}
-	cli := client.NewPublicClient(cfg)
-	if err := cli.Connect(); err != nil {
-		slog.Error("connect", slog.String("error", err.Error()))
-		return
-	}
-	defer func() {
-		if err := cli.Disconnect(); err != nil {
-			slog.Error("disconnect", slog.String("error", err.Error()))
-		}
-	}()
-
+	ctx := context.Background()
 	switch *action {
 	case "profile", "p", "info":
 		slog.Debug("client info", slog.String("email", user.GetEmail()), slog.String("fingerprint", string(user.GetHexKeys())))
 	case "registration", "reg":
-		if err := cli.Registration(); err != nil {
+		reps, err := authClient.Register(ctx, &proto.UserRequest{User: user})
+		if err != nil {
 			slog.Error("registration", slog.String("error", err.Error()))
 			return
 		}
-		slog.Debug("registration", slog.String("token", cli.GetToken()))
+		slog.Debug("registration", slog.String("token", reps.GetToken()))
 	case "login":
-		if err := cli.Login(); err != nil {
+		reps, err := authClient.Login(ctx, &proto.UserRequest{User: user})
+		if err != nil {
 			slog.Error("login", slog.String("error", err.Error()))
 			return
 		}
-		slog.Debug("login", slog.String("token", cli.GetToken()))
+		slog.Debug("login", slog.String("token", reps.GetToken()))
 	}
 }

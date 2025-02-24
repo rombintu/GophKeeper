@@ -17,6 +17,10 @@ type Config struct {
 	SyncServiceAddress    string        `env-default:":3204"`
 }
 
+type ClientConfig struct {
+	Address string
+}
+
 func NewConfig() (Config, error) {
 	var cfg Config
 
