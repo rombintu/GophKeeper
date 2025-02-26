@@ -42,6 +42,7 @@ type SecretManager interface {
 	Driver
 	SecretCreate(secret *kpb.Secret) error
 	SecretList(userID int64, pattern string) ([]*kpb.Secret, error)
+	SecretPurge(userID int64, secret *kpb.Secret) error
 }
 
 // TODO: Унификация. уменьшение кода

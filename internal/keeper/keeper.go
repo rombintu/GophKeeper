@@ -10,6 +10,7 @@ import (
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	"github.com/rombintu/GophKeeper/internal/storage"
 	"github.com/rombintu/GophKeeper/lib/common"
+	"github.com/rombintu/GophKeeper/lib/jwt"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 )
@@ -51,10 +52,14 @@ func (s *KeeperService) Start() error {
 	}
 	// TODO: конфигурация и унификация для сервисов
 	limiter := rate.NewLimiter(rate.Limit(10), 20)
-	server := grpc.NewServer(grpc.UnaryInterceptor(
-		common.RateLimitInterceptor(limiter),
-	))
-	// jwt.VerifyTokenInterceptor(s.config.Secret, []string{}),
+
+	opts := []grpc.ServerOption{
+		grpc.ChainUnaryInterceptor(
+			common.RateLimitInterceptor(limiter),
+			jwt.VerifyTokenInterceptor(s.config.Secret, []string{}),
+		),
+	}
+	server := grpc.NewServer(opts...)
 	kpb.RegisterKeeperServer(server, s)
 	slog.Info("Service is starting",
 		slog.String("service", ServiceName),

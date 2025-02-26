@@ -68,6 +68,11 @@ func (md *MemoryDriver) SecretList(userID int64, pattern string) ([]*kpb.Secret,
 	return founded, nil
 }
 
+func (md *MemoryDriver) SecretPurge(userID int64, secret *kpb.Secret) error {
+	// А смысл заморачиваться?
+	return nil
+}
+
 func (md *MemoryDriver) Ping() error {
 	return nil
 }

@@ -33,7 +33,13 @@ message CreateRequest {
     Secret secret = 2;
 }
 
+message DeleteRequest {
+    int64 user_id = 1;
+    Secret secret = 2;
+}
+
 service Keeper {
     rpc Fetch(FetchRequest) returns (FetchResponse);
     rpc Create(CreateRequest) returns (google.protobuf.Empty);
+    rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
 }

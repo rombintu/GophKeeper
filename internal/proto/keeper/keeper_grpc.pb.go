@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 type KeeperClient interface {
 	Fetch(ctx context.Context, in *FetchRequest, opts ...grpc.CallOption) (*FetchResponse, error)
 	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type keeperClient struct {
@@ -49,12 +50,22 @@ func (c *keeperClient) Create(ctx context.Context, in *CreateRequest, opts ...gr
 	return out, nil
 }
 
+func (c *keeperClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/proto.Keeper/Delete", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KeeperServer is the server API for Keeper service.
 // All implementations must embed UnimplementedKeeperServer
 // for forward compatibility
 type KeeperServer interface {
 	Fetch(context.Context, *FetchRequest) (*FetchResponse, error)
 	Create(context.Context, *CreateRequest) (*emptypb.Empty, error)
+	Delete(context.Context, *DeleteRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedKeeperServer()
 }
 
@@ -67,6 +78,9 @@ func (UnimplementedKeeperServer) Fetch(context.Context, *FetchRequest) (*FetchRe
 }
 func (UnimplementedKeeperServer) Create(context.Context, *CreateRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+}
+func (UnimplementedKeeperServer) Delete(context.Context, *DeleteRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedKeeperServer) mustEmbedUnimplementedKeeperServer() {}
 
@@ -117,6 +131,24 @@ func _Keeper_Create_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Keeper_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeeperServer).Delete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.Keeper/Delete",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeeperServer).Delete(ctx, req.(*DeleteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Keeper_ServiceDesc is the grpc.ServiceDesc for Keeper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -131,6 +163,10 @@ var Keeper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Create",
 			Handler:    _Keeper_Create_Handler,
+		},
+		{
+			MethodName: "Delete",
+			Handler:    _Keeper_Delete_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

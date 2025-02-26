@@ -30,3 +30,13 @@ func (s *KeeperService) Create(ctx context.Context, in *kpb.CreateRequest) (*emp
 
 	return &emptypb.Empty{}, nil
 }
+
+func (s *KeeperService) Delete(ctx context.Context, in *kpb.DeleteRequest) (*emptypb.Empty, error) {
+	if err := s.store.SecretPurge(in.GetUserId(), in.GetSecret()); err != nil {
+		slog.Debug("message", slog.String("func",
+			common.DotJoin(ServiceName, "Delete", "SecretPurge")), slog.String("error", err.Error()))
+		return &emptypb.Empty{}, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
