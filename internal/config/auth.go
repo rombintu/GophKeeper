@@ -21,6 +21,8 @@ func NewAuthConfig(base Config) AuthConfig {
 }
 
 func (c *AuthConfig) Load() {
+	c.DriverPath = os.Getenv("AUTH_DRIVER_PATH")
+
 	dur, err := time.ParseDuration(os.Getenv("AUTH_TOKEN_EXPIRE"))
 	if err != nil {
 		slog.Warn("parse healthcheck failed", slog.String("default", "10m"))

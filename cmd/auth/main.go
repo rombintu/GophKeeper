@@ -8,6 +8,7 @@ import (
 
 	"github.com/rombintu/GophKeeper/internal/auth"
 	"github.com/rombintu/GophKeeper/internal/config"
+	"github.com/rombintu/GophKeeper/internal/storage"
 	"github.com/rombintu/GophKeeper/lib/common"
 	"github.com/rombintu/GophKeeper/lib/logger"
 )
@@ -28,7 +29,12 @@ func main() {
 	cfg.Load()
 	logger.InitLogger(cfg.Env)
 	common.Version(buildVersion, buildDate, buildCommit, "auth")
-	service := auth.NewAuthService(cfg)
+
+	store := storage.NewUserManager(cfg.DriverPath)
+	service := auth.NewAuthService(store, cfg)
+
+	service.Configure()
+
 	go service.HealthCheck(cfg.HealthCheckDuration)
 	go func() {
 		if err := service.Start(); err != nil {

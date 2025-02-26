@@ -45,14 +45,14 @@ func main() {
 	case "profile", "p", "info":
 		slog.Debug("client info", slog.String("email", user.GetEmail()), slog.String("fingerprint", string(user.GetHexKeys())))
 	case "registration", "reg":
-		reps, err := authClient.Register(ctx, &proto.UserRequest{User: user})
+		reps, err := authClient.Register(ctx, &proto.RegisterRequest{User: user})
 		if err != nil {
 			slog.Error("registration", slog.String("error", err.Error()))
 			return
 		}
 		slog.Debug("registration", slog.String("token", reps.GetToken()))
 	case "login":
-		reps, err := authClient.Login(ctx, &proto.UserRequest{User: user})
+		reps, err := authClient.Login(ctx, &proto.LoginRequest{User: user})
 		if err != nil {
 			slog.Error("login", slog.String("error", err.Error()))
 			return

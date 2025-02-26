@@ -30,16 +30,29 @@ message UserResponse {
     User user = 1;
 }
 
+message LoginRequest {
+    User user = 1;
+}
+
+message LoginResponse {
+    string token = 1;
+}
+
+message RegisterRequest {
+    User user = 1;
+}
+
+message RegisterResponse {
+    string token = 1;
+}
+
+
 service Storage {
     rpc UserGet(UserRequest) returns (UserResponse);
     rpc UserCreate(UserRequest) returns (UserResponse);
 }
 
-message AuthResponse {
-    string token = 1; // Auth token of the logged in user.
-}
-
 service Auth {
-    rpc Register (UserRequest) returns (AuthResponse);
-    rpc Login (UserRequest) returns (AuthResponse);
+    rpc Register (RegisterRequest) returns (RegisterResponse);
+    rpc Login (LoginRequest) returns (LoginResponse);
 }

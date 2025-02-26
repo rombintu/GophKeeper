@@ -7,7 +7,8 @@ import (
 
 	"github.com/rombintu/GophKeeper/internal"
 	"github.com/rombintu/GophKeeper/internal/config"
-	pb "github.com/rombintu/GophKeeper/internal/proto"
+	"github.com/rombintu/GophKeeper/internal/proto"
+	"github.com/rombintu/GophKeeper/internal/storage"
 	"github.com/rombintu/GophKeeper/lib/common"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
@@ -18,12 +19,14 @@ const (
 )
 
 type AuthService struct {
-	pb.UnimplementedAuthServer
+	proto.UnimplementedAuthServer
+	store  storage.UserManager
 	config config.AuthConfig
 }
 
-func NewAuthService(cfg config.AuthConfig) internal.Service {
+func NewAuthService(store storage.UserManager, cfg config.AuthConfig) internal.Service {
 	return &AuthService{
+		store:  store,
 		config: cfg,
 	}
 }
@@ -51,7 +54,7 @@ func (s *AuthService) Start() error {
 	server := grpc.NewServer(grpc.UnaryInterceptor(
 		common.RateLimitInterceptor(limiter),
 	))
-	pb.RegisterAuthServer(server, s)
+	proto.RegisterAuthServer(server, s)
 	slog.Info("Service is starting",
 		slog.String("service", ServiceName),
 		slog.String("address", s.config.AuthServiceAddress),
@@ -60,5 +63,9 @@ func (s *AuthService) Start() error {
 }
 
 func (s *AuthService) Shutdown() error {
-	return nil
+	return s.store.Close()
+}
+
+func (s *AuthService) Configure() error {
+	return s.store.Open()
 }

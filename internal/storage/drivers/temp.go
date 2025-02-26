@@ -12,17 +12,16 @@ type MemoryDriver struct {
 	Secrets []*pb.Secret
 }
 
-func (md *MemoryDriver) UserGet(user *pb.User) error {
+func (md *MemoryDriver) UserGet(user *pb.User) (*pb.User, error) {
 	for _, u := range md.Users {
 		if user.GetEmail() == u.GetEmail() {
 			slog.Debug("founded user",
 				slog.String("email", u.GetEmail()),
 				slog.String("fingerprint", string(u.GetHexKeys())))
-			user.HexKeys = u.GetHexKeys()
-			return nil
+			return u, nil
 		}
 	}
-	return errors.New("user not found")
+	return nil, errors.New("user not found")
 
 }
 
@@ -47,10 +46,22 @@ func (md *MemoryDriver) SecretCreate(secret *pb.Secret) error {
 	return nil
 }
 
-func (md *MemoryDriver) SecretsGet(userID int64) ([]*pb.Secret, error) {
+func (md *MemoryDriver) SecretList(userID int64) ([]*pb.Secret, error) {
 	return []*pb.Secret{}, nil
 }
 
 func (md *MemoryDriver) Ping() error {
+	return nil
+}
+
+func (md *MemoryDriver) Open() error {
+	md.Users = []*pb.User{}
+	md.Secrets = []*pb.Secret{}
+	return nil
+}
+
+func (md *MemoryDriver) Close() error {
+	md.Users = []*pb.User{}
+	md.Secrets = []*pb.Secret{}
 	return nil
 }
