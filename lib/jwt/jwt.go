@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/rombintu/GophKeeper/internal/proto"
+	proto "github.com/rombintu/GophKeeper/internal/proto/auth"
 )
 
 // NewToken creates new JWT token for given user
@@ -40,3 +40,20 @@ func GenerateHMACSecret(length int) (string, error) {
 	// Кодируем в base64 для удобства хранения
 	return base64.URLEncoding.EncodeToString(key), nil
 }
+
+// func TokenValidateInterceptor(secret string) grpc.UnaryServerInterceptor {
+// 	return func(
+// 		ctx context.Context,
+// 		req interface{},
+// 		info *grpc.UnaryServerInfo,
+// 		handler grpc.UnaryHandler,
+// 	) (interface{}, error) {
+// 		if !limiter.Allow() {
+// 			return nil, status.Error(
+// 				codes.ResourceExhausted,
+// 				"too many requests",
+// 			)
+// 		}
+// 		return handler(ctx, req)
+// 	}
+// }

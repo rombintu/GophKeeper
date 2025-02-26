@@ -9,12 +9,12 @@ import (
 )
 
 type Config struct {
-	Env                 string        `env-default:"local"`
-	HealthCheckDuration time.Duration `env-default:"10s"`
-	AuthServiceAddress  string        `env-default:":3201"`
-	ApiServiceAddress   string        `env-default:":3202"`
-	SyncServiceAddress  string        `env-default:":3204"`
-	DriverPath          string
+	Env                  string        `env-default:"local"`
+	HealthCheckDuration  time.Duration `env-default:"10s"`
+	AuthServiceAddress   string        `env-default:":3201"`
+	KeeperServiceAddress string        `env-default:":3202"`
+	SyncServiceAddress   string        `env-default:":3204"`
+	DriverPath           string
 }
 
 type ClientConfig struct {
@@ -38,7 +38,7 @@ func NewConfig() (Config, error) {
 	}
 
 	cfg.AuthServiceAddress = os.Getenv("AUTH_GRPC_LISTEN")
-	cfg.ApiServiceAddress = os.Getenv("API_GRPC_LISTEN")
+	cfg.KeeperServiceAddress = os.Getenv("KEEPER_GRPC_LISTEN")
 	cfg.SyncServiceAddress = os.Getenv("SYNC_GRPC_LISTEN")
 
 	return cfg, nil

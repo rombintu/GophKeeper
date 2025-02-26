@@ -9,7 +9,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/armor"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
-	"github.com/rombintu/GophKeeper/internal/proto"
+	proto "github.com/rombintu/GophKeeper/internal/proto/auth"
 )
 
 // LoadPublicKey загружает открытый ключ из файла

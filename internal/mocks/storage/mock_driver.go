@@ -8,7 +8,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	base "github.com/rombintu/GophKeeper/internal/proto"
 )
 
 // MockDriver is a mock of Driver interface.
@@ -34,6 +33,34 @@ func (m *MockDriver) EXPECT() *MockDriverMockRecorder {
 	return m.recorder
 }
 
+// Close mocks base method.
+func (m *MockDriver) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close.
+func (mr *MockDriverMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockDriver)(nil).Close))
+}
+
+// Open mocks base method.
+func (m *MockDriver) Open() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Open")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Open indicates an expected call of Open.
+func (mr *MockDriverMockRecorder) Open() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Open", reflect.TypeOf((*MockDriver)(nil).Open))
+}
+
 // Ping mocks base method.
 func (m *MockDriver) Ping() error {
 	m.ctrl.T.Helper()
@@ -46,76 +73,4 @@ func (m *MockDriver) Ping() error {
 func (mr *MockDriverMockRecorder) Ping() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockDriver)(nil).Ping))
-}
-
-// SecretCreate mocks base method.
-func (m *MockDriver) SecretCreate(arg0 *base.Secret) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SecretCreate", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SecretCreate indicates an expected call of SecretCreate.
-func (mr *MockDriverMockRecorder) SecretCreate(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SecretCreate", reflect.TypeOf((*MockDriver)(nil).SecretCreate), arg0)
-}
-
-// SecretGet mocks base method.
-func (m *MockDriver) SecretGet(arg0 int64) (*base.Secret, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SecretGet", arg0)
-	ret0, _ := ret[0].(*base.Secret)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SecretGet indicates an expected call of SecretGet.
-func (mr *MockDriverMockRecorder) SecretGet(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SecretGet", reflect.TypeOf((*MockDriver)(nil).SecretGet), arg0)
-}
-
-// SecretsGet mocks base method.
-func (m *MockDriver) SecretsGet(arg0 int64) ([]*base.Secret, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SecretsGet", arg0)
-	ret0, _ := ret[0].([]*base.Secret)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SecretsGet indicates an expected call of SecretsGet.
-func (mr *MockDriverMockRecorder) SecretsGet(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SecretsGet", reflect.TypeOf((*MockDriver)(nil).SecretsGet), arg0)
-}
-
-// UserCreate mocks base method.
-func (m *MockDriver) UserCreate(arg0 *base.User) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UserCreate", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UserCreate indicates an expected call of UserCreate.
-func (mr *MockDriverMockRecorder) UserCreate(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserCreate", reflect.TypeOf((*MockDriver)(nil).UserCreate), arg0)
-}
-
-// UserGet mocks base method.
-func (m *MockDriver) UserGet(arg0 *base.User) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UserGet", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UserGet indicates an expected call of UserGet.
-func (mr *MockDriverMockRecorder) UserGet(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserGet", reflect.TypeOf((*MockDriver)(nil).UserGet), arg0)
 }

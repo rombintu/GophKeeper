@@ -1,4 +1,4 @@
-package auth
+package keeper
 
 import (
 	"log/slog"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/rombintu/GophKeeper/internal"
 	"github.com/rombintu/GophKeeper/internal/config"
-	apb "github.com/rombintu/GophKeeper/internal/proto/auth"
+	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	"github.com/rombintu/GophKeeper/internal/storage"
 	"github.com/rombintu/GophKeeper/lib/common"
 	"golang.org/x/time/rate"
@@ -15,23 +15,23 @@ import (
 )
 
 const (
-	ServiceName = "AuthService"
+	ServiceName = "KeeperService"
 )
 
-type AuthService struct {
-	apb.UnimplementedAuthServer
-	store  storage.UserManager
-	config config.AuthConfig
+type KeeperService struct {
+	kpb.UnimplementedKeeperServer
+	store  storage.SecretManager
+	config config.KeeperConfig
 }
 
-func NewAuthService(store storage.UserManager, cfg config.AuthConfig) internal.Service {
-	return &AuthService{
+func NewKeeperService(store storage.SecretManager, cfg config.KeeperConfig) internal.Service {
+	return &KeeperService{
 		store:  store,
 		config: cfg,
 	}
 }
 
-func (s *AuthService) HealthCheck(duration time.Duration) {
+func (s *KeeperService) HealthCheck(duration time.Duration) {
 	ticker := time.NewTicker(s.config.HealthCheckDuration)
 	defer ticker.Stop()
 
@@ -40,14 +40,12 @@ func (s *AuthService) HealthCheck(duration time.Duration) {
 		case <-ticker.C:
 			// TODO: отправка в API статус сервиса
 			slog.Debug("health check service", slog.String("service", ServiceName))
-
-			slog.Debug("clean up unused connection", slog.String("service", ServiceName))
 		}
 	}
 }
 
-func (s *AuthService) Start() error {
-	listen, err := net.Listen(internal.TCP, s.config.AuthServiceAddress)
+func (s *KeeperService) Start() error {
+	listen, err := net.Listen(internal.TCP, s.config.KeeperServiceAddress)
 	if err != nil {
 		return err
 	}
@@ -56,18 +54,18 @@ func (s *AuthService) Start() error {
 	server := grpc.NewServer(grpc.UnaryInterceptor(
 		common.RateLimitInterceptor(limiter),
 	))
-	apb.RegisterAuthServer(server, s)
+	kpb.RegisterKeeperServer(server, s)
 	slog.Info("Service is starting",
 		slog.String("service", ServiceName),
-		slog.String("address", s.config.AuthServiceAddress),
+		slog.String("address", s.config.KeeperServiceAddress),
 	)
 	return server.Serve(listen)
 }
 
-func (s *AuthService) Shutdown() error {
+func (s *KeeperService) Shutdown() error {
 	return s.store.Close()
 }
 
-func (s *AuthService) Configure() error {
+func (s *KeeperService) Configure() error {
 	return s.store.Open()
 }

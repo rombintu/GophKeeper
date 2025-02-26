@@ -3,11 +3,11 @@ package common
 import (
 	"errors"
 
-	"github.com/rombintu/GophKeeper/internal/proto"
+	apb "github.com/rombintu/GophKeeper/internal/proto/auth"
 )
 
 // TODO: Email validate
-func UserValidate(user *proto.User) error {
+func UserValidate(user *apb.User) error {
 	if user.GetEmail() == "" {
 		return errors.New("email is required")
 	}

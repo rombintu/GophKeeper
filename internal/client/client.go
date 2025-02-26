@@ -1,7 +1,8 @@
 package client
 
 import (
-	"github.com/rombintu/GophKeeper/internal/proto"
+	apb "github.com/rombintu/GophKeeper/internal/proto/auth"
+	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	"github.com/rombintu/GophKeeper/lib/connections"
 )
 
@@ -15,10 +16,18 @@ func NewClientPool(pool *connections.ConnPool) *ClientPool {
 	}
 }
 
-func (c *ClientPool) NewAuthClient(addr string) (proto.AuthClient, error) {
+func (c *ClientPool) NewAuthClient(addr string) (apb.AuthClient, error) {
 	conn, err := c.pool.Get(addr)
 	if err != nil {
 		return nil, err
 	}
-	return proto.NewAuthClient(conn), nil
+	return apb.NewAuthClient(conn), nil
+}
+
+func (c *ClientPool) NewKeeperClient(addr string) (kpb.KeeperClient, error) {
+	conn, err := c.pool.Get(addr)
+	if err != nil {
+		return nil, err
+	}
+	return kpb.NewKeeperClient(conn), nil
 }

@@ -1,9 +1,12 @@
 package connections
 
 import (
+	"context"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -35,4 +38,28 @@ func (p *ConnPool) Get(addr string) (*grpc.ClientConn, error) {
 	}
 	p.conns[addr] = conn
 	return conn, nil
+}
+
+func (p *ConnPool) CleanUp() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for addr, conn := range p.conns {
+		if !p.checkHealth(conn) {
+			conn.Close()
+			delete(p.conns, addr)
+		}
+	}
+}
+
+func (p *ConnPool) checkHealth(conn *grpc.ClientConn) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	state := conn.GetState()
+	if state == connectivity.Ready {
+		return true
+	}
+
+	return conn.WaitForStateChange(ctx, state)
 }

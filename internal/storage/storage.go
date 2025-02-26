@@ -4,14 +4,14 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/rombintu/GophKeeper/internal/proto"
+	apb "github.com/rombintu/GophKeeper/internal/proto/auth"
+	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	"github.com/rombintu/GophKeeper/internal/storage/drivers"
 )
 
 const (
 	memDriver = "mem"
 	pgxDriver = "pgx" // TODO
-	// ServiceName = "StorageService"
 )
 
 func ParseDriver(driverPath string) (string, string) {
@@ -34,18 +34,27 @@ type Driver interface {
 
 type UserManager interface {
 	Driver
-	UserGet(user *proto.User) (*proto.User, error)
-	UserCreate(user *proto.User) error
+	UserGet(user *apb.User) (*apb.User, error)
+	UserCreate(user *apb.User) error
 }
 
 type SecretManager interface {
 	Driver
-	SecretGet(userID int64) (*proto.Secret, error)
-	SecretCreate(secret *proto.Secret) error
-	SecretList(userID int64) ([]*proto.Secret, error)
+	SecretCreate(secret *kpb.Secret) error
+	SecretList(userID int64, pattern string) ([]*kpb.Secret, error)
 }
 
+// TODO: Унификация. уменьшение кода
 func NewUserManager(driverPath string) UserManager {
+	driverName, _ := ParseDriver(driverPath)
+	switch driverName { // TODO
+	case memDriver:
+		return &drivers.MemoryDriver{}
+	}
+	return nil
+}
+
+func NewSecretManager(driverPath string) SecretManager {
 	driverName, _ := ParseDriver(driverPath)
 	switch driverName { // TODO
 	case memDriver:
