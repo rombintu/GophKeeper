@@ -54,6 +54,7 @@ func (s *KeeperService) Start() error {
 	server := grpc.NewServer(grpc.UnaryInterceptor(
 		common.RateLimitInterceptor(limiter),
 	))
+	// jwt.VerifyTokenInterceptor(s.config.Secret, []string{}),
 	kpb.RegisterKeeperServer(server, s)
 	slog.Info("Service is starting",
 		slog.String("service", ServiceName),

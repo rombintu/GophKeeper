@@ -1,5 +1,10 @@
 GophKeeper
 
+### Generate secret for services
+```bash
+go run cmd/auth/main.go --secret
+```
+
 ### Client configuration
 ```bash
 gpg --full-generate-key # Генерация ключей

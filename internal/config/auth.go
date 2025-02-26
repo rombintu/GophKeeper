@@ -10,7 +10,6 @@ import (
 
 type AuthConfig struct {
 	Config
-	Secret   string
 	TokenExp time.Duration
 }
 

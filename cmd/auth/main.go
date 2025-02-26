@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -10,6 +12,7 @@ import (
 	"github.com/rombintu/GophKeeper/internal/config"
 	"github.com/rombintu/GophKeeper/internal/storage"
 	"github.com/rombintu/GophKeeper/lib/common"
+	"github.com/rombintu/GophKeeper/lib/jwt"
 	"github.com/rombintu/GophKeeper/lib/logger"
 )
 
@@ -20,6 +23,19 @@ var (
 )
 
 func main() {
+	genSecret := flag.Bool("secret", false, "Generate secret and exit")
+	flag.Parse()
+
+	if *genSecret {
+		newSecret, err := jwt.GenerateHMACSecret(32)
+		if err != nil {
+			fmt.Println("error generate secret")
+			os.Exit(1)
+		}
+		fmt.Printf("Generated: %s\n", newSecret)
+		os.Exit(0)
+	}
+
 	baseConfig, err := config.NewConfig()
 	if err != nil {
 		slog.Error("Config load error", slog.String("error", err.Error()))

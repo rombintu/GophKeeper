@@ -15,6 +15,7 @@ type Config struct {
 	KeeperServiceAddress string        `env-default:":3202"`
 	SyncServiceAddress   string        `env-default:":3204"`
 	DriverPath           string
+	Secret               string
 }
 
 type ClientConfig struct {
@@ -29,6 +30,7 @@ func NewConfig() (Config, error) {
 	}
 
 	cfg.Env = os.Getenv("ENV")
+	cfg.Secret = os.Getenv("SECRET")
 	dur, err := time.ParseDuration(os.Getenv("HEALTHCHECK_DURATION"))
 	if err != nil {
 		slog.Warn("parse healthcheck failed", slog.String("default", "10s"))
