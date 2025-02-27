@@ -28,9 +28,9 @@ func main() {
 	cfg := config.NewKeeperConfig(baseConfig)
 	cfg.Load()
 	logger.InitLogger(cfg.Env)
-	common.Version(buildVersion, buildDate, buildCommit, "keeper")
+	common.Version(buildVersion, buildDate, buildCommit, keeper.ServiceName)
 
-	store := storage.NewSecretManager(cfg.DriverPath)
+	store := storage.NewSecretManager(cfg.DriverPath, keeper.ServiceName)
 	service := keeper.NewKeeperService(store, cfg)
 
 	service.Configure()

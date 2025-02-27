@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"context"
 	"testing"
 
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
@@ -8,7 +9,8 @@ import (
 
 func TestMemoryDriver_SecretCreate(t *testing.T) {
 	md := &MemoryDriver{}
-	md.Open()
+	ctx := context.Background()
+	md.Open(ctx)
 	tests := []struct {
 		name     string
 		md       *MemoryDriver
@@ -19,21 +21,21 @@ func TestMemoryDriver_SecretCreate(t *testing.T) {
 		{
 			name:     "create_test_secret",
 			md:       md,
-			secret:   &kpb.Secret{Title: "test", UserId: 1},
+			secret:   &kpb.Secret{Title: "test", UserEmail: "1"},
 			wantErr:  false,
 			wantSize: 1,
 		},
 		{
 			name:     "create_test_secret_same",
 			md:       md,
-			secret:   &kpb.Secret{Title: "test", UserId: 1},
+			secret:   &kpb.Secret{Title: "test", UserEmail: "1"},
 			wantErr:  false,
 			wantSize: 2,
 		},
 		{
 			name:     "create_test_secret_more",
 			md:       md,
-			secret:   &kpb.Secret{Title: "test", UserId: 2},
+			secret:   &kpb.Secret{Title: "test", UserEmail: "2"},
 			wantErr:  false,
 			wantSize: 3,
 		},
@@ -41,7 +43,7 @@ func TestMemoryDriver_SecretCreate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			if err := md.SecretCreate(tt.secret); (err != nil) != tt.wantErr {
+			if err := md.SecretCreate(ctx, tt.secret); (err != nil) != tt.wantErr {
 				t.Errorf("MemoryDriver.SecretCreate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if len(md.Secrets) != tt.wantSize {
@@ -53,17 +55,18 @@ func TestMemoryDriver_SecretCreate(t *testing.T) {
 
 func TestMemoryDriver_SecretList(t *testing.T) {
 	md := &MemoryDriver{}
-	md.Open()
+	ctx := context.Background()
+	md.Open(ctx)
 
-	s1 := &kpb.Secret{Title: "test", UserId: 1, Version: 0}
-	s2 := &kpb.Secret{Title: "test", UserId: 1, Version: 1}
-	s3 := &kpb.Secret{Title: "test", UserId: 2, Version: 0}
+	s1 := &kpb.Secret{Title: "test", UserEmail: "1", Version: 0}
+	s2 := &kpb.Secret{Title: "test", UserEmail: "1", Version: 1}
+	s3 := &kpb.Secret{Title: "test", UserEmail: "2", Version: 0}
 	md.Secrets = append(md.Secrets,
 		s1, s2, s3,
 	)
 	type args struct {
-		userID  int64
-		pattern string
+		UserEmail string
+		pattern   string
 	}
 	tests := []struct {
 		name     string
@@ -73,32 +76,32 @@ func TestMemoryDriver_SecretList(t *testing.T) {
 	}{
 		{
 			name:     "unknown_user_id",
-			args:     args{userID: 0, pattern: ""},
+			args:     args{UserEmail: "0", pattern: ""},
 			wantSize: 0,
 			wantErr:  false,
 		},
 		{
 			name:     "1_user_id_all",
-			args:     args{userID: 1, pattern: ""},
+			args:     args{UserEmail: "1", pattern: ""},
 			wantSize: 2,
 			wantErr:  false,
 		},
 		{
 			name:     "1_user_id_notfounded",
-			args:     args{userID: 1, pattern: "no"},
+			args:     args{UserEmail: "1", pattern: "no"},
 			wantSize: 0,
 			wantErr:  false,
 		},
 		{
 			name:     "2_user_id_all",
-			args:     args{userID: 2, pattern: "*"},
+			args:     args{UserEmail: "2", pattern: "*"},
 			wantSize: 1,
 			wantErr:  false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := md.SecretList(tt.args.userID, tt.args.pattern)
+			got, err := md.SecretList(ctx, tt.args.UserEmail, tt.args.pattern)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MemoryDriver.SecretList() error = %v, wantErr %v", err, tt.wantErr)
 				return

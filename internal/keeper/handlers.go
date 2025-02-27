@@ -10,9 +10,9 @@ import (
 )
 
 func (s *KeeperService) Fetch(ctx context.Context, in *kpb.FetchRequest) (*kpb.FetchResponse, error) {
-	secrets, err := s.store.SecretList(in.GetUserId(), in.GetPattern())
+	secrets, err := s.store.SecretList(context.Background(), in.GetUserEmail(), in.GetPattern())
 	if err != nil {
-		slog.Debug("message", slog.String("func",
+		slog.Error("message", slog.String("func",
 			common.DotJoin(ServiceName, "Fetch", "SecretList")), slog.String("error", err.Error()))
 		return nil, err
 	}
@@ -22,8 +22,8 @@ func (s *KeeperService) Fetch(ctx context.Context, in *kpb.FetchRequest) (*kpb.F
 }
 
 func (s *KeeperService) Create(ctx context.Context, in *kpb.CreateRequest) (*emptypb.Empty, error) {
-	if err := s.store.SecretCreate(in.GetSecret()); err != nil {
-		slog.Debug("message", slog.String("func",
+	if err := s.store.SecretCreate(context.Background(), in.GetSecret()); err != nil {
+		slog.Error("message", slog.String("func",
 			common.DotJoin(ServiceName, "Create", "SecretCreate")), slog.String("error", err.Error()))
 		return &emptypb.Empty{}, err
 	}
@@ -32,8 +32,8 @@ func (s *KeeperService) Create(ctx context.Context, in *kpb.CreateRequest) (*emp
 }
 
 func (s *KeeperService) Delete(ctx context.Context, in *kpb.DeleteRequest) (*emptypb.Empty, error) {
-	if err := s.store.SecretPurge(in.GetUserId(), in.GetSecret()); err != nil {
-		slog.Debug("message", slog.String("func",
+	if err := s.store.SecretPurge(context.Background(), in.GetSecret()); err != nil {
+		slog.Error("message", slog.String("func",
 			common.DotJoin(ServiceName, "Delete", "SecretPurge")), slog.String("error", err.Error()))
 		return &emptypb.Empty{}, err
 	}

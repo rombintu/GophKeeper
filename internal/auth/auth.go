@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"log/slog"
 	"net"
 	"time"
@@ -40,8 +41,8 @@ func (s *AuthService) HealthCheck(duration time.Duration) {
 		case <-ticker.C:
 			// TODO: отправка в API статус сервиса
 			slog.Debug("health check service", slog.String("service", ServiceName))
-
-			slog.Debug("clean up unused connection", slog.String("service", ServiceName))
+			ctx := context.Background()
+			s.store.Ping(ctx, true)
 		}
 	}
 }
@@ -65,9 +66,16 @@ func (s *AuthService) Start() error {
 }
 
 func (s *AuthService) Shutdown() error {
-	return s.store.Close()
+	return s.store.Close(context.Background())
 }
 
 func (s *AuthService) Configure() error {
-	return s.store.Open()
+	ctx := context.Background()
+	if err := s.store.Open(ctx); err != nil {
+		return err
+	}
+	if err := s.store.Configure(ctx); err != nil {
+		return err
+	}
+	return nil
 }

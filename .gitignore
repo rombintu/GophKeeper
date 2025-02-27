@@ -7,3 +7,5 @@ cmd/sync/sync
 
 profiles/*
 !profiles/.gitkeep
+
+.env

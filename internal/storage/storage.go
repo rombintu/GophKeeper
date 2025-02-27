@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"log/slog"
 	"strings"
 
@@ -11,13 +12,13 @@ import (
 
 const (
 	memDriver = "mem"
-	pgxDriver = "pgx" // TODO
+	pgxDriver = "postgres" // TODO
 )
 
-func ParseDriver(driverPath string) (string, string) {
-	data := strings.Split(driverPath, ":")
+func parseDriver(driverPath string) (string, string) {
+	data := strings.Split(driverPath, "://")
 	if len(data) == 2 {
-		return data[0], data[1]
+		return data[0], driverPath
 	}
 	slog.Warn("parse driver failed",
 		slog.String("got", driverPath),
@@ -27,39 +28,42 @@ func ParseDriver(driverPath string) (string, string) {
 }
 
 type Driver interface {
-	Open() error
-	Close() error
-	Ping() error
+	Open(ctx context.Context) error
+	Close(ctx context.Context) error
+	Ping(ctx context.Context, monitoring bool) error
+	Configure(ctx context.Context) error
 }
 
 type UserManager interface {
 	Driver
-	UserGet(user *apb.User) (*apb.User, error)
-	UserCreate(user *apb.User) error
+	UserGet(ctx context.Context, user *apb.User) (*apb.User, error)
+	UserCreate(ctx context.Context, user *apb.User) error
 }
 
 type SecretManager interface {
 	Driver
-	SecretCreate(secret *kpb.Secret) error
-	SecretList(userID int64, pattern string) ([]*kpb.Secret, error)
-	SecretPurge(userID int64, secret *kpb.Secret) error
+	SecretCreate(ctx context.Context, secret *kpb.Secret) error
+	SecretList(ctx context.Context, userEmail string, pattern string) ([]*kpb.Secret, error)
+	SecretPurge(ctx context.Context, secret *kpb.Secret) error
 }
 
-// TODO: Унификация. уменьшение кода
-func NewUserManager(driverPath string) UserManager {
-	driverName, _ := ParseDriver(driverPath)
+func NewDriver(driverPath, serviceName string) Driver {
+	driverName, driverURL := parseDriver(driverPath)
 	switch driverName { // TODO
 	case memDriver:
 		return &drivers.MemoryDriver{}
+	case pgxDriver:
+		return drivers.NewPgxDriver(driverURL, serviceName)
 	}
 	return nil
 }
 
-func NewSecretManager(driverPath string) SecretManager {
-	driverName, _ := ParseDriver(driverPath)
-	switch driverName { // TODO
-	case memDriver:
-		return &drivers.MemoryDriver{}
-	}
-	return nil
+func NewUserManager(driverPath, serviceName string) UserManager {
+	return NewDriver(driverPath, serviceName).(UserManager)
+
+}
+
+func NewSecretManager(driverPath, serviceName string) SecretManager {
+	return NewDriver(driverPath, serviceName).(SecretManager)
+
 }

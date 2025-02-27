@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"log/slog"
 	"net"
 	"time"
@@ -41,6 +42,8 @@ func (s *KeeperService) HealthCheck(duration time.Duration) {
 		case <-ticker.C:
 			// TODO: отправка в API статус сервиса
 			slog.Debug("health check service", slog.String("service", ServiceName))
+			ctx := context.Background()
+			s.store.Ping(ctx, true)
 		}
 	}
 }
@@ -69,9 +72,9 @@ func (s *KeeperService) Start() error {
 }
 
 func (s *KeeperService) Shutdown() error {
-	return s.store.Close()
+	return s.store.Close(context.Background())
 }
 
 func (s *KeeperService) Configure() error {
-	return s.store.Open()
+	return s.store.Open(context.Background())
 }

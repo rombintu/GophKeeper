@@ -1,5 +1,8 @@
 version: '3'
 
+vars:
+  migrVar: internal/storage/migrations
+
 tasks:
   build-auth:
     cmds:
@@ -23,3 +26,16 @@ tasks:
         protoc --go_out=. --go_opt=paths=source_relative \
         --go-grpc_out=. --go-grpc_opt=paths=source_relative \
         internal/proto/keeper/keeper.proto
+
+  mg-up:
+    cmds:
+      - migrate -path {{.migrVar}} -database $PGX_DB_PATH up
+  mg-up-1:
+    cmds:
+      - migrate -path {{.migrVar}} -database $PGX_DB_PATH up 1
+  mg-down-1:
+    cmds:
+      - migrate -path {{.migrVar}} -database $PGX_DB_PATH down 1
+  mg-drop:
+    cmds:
+      - migrate -path {{.migrVar}} -database $PGX_DB_PATH drop
