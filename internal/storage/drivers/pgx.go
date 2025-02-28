@@ -120,18 +120,10 @@ func (d *PgxDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) error 
 	return nil
 }
 
-func (d *PgxDriver) SecretList(ctx context.Context, userEmail, pattern string) ([]*kpb.Secret, error) {
-	search := true
-	if pattern == "*" || pattern == "" {
-		search = false
-	}
+func (d *PgxDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.Secret, error) {
 	sql := `SELECT title, secret_type, user_email, created_at, version, payload 
 		FROM secrets WHERE user_email=$1`
-
-	if search {
-		sql += " AND title LIKE %$2%"
-	}
-	rows, err := d.queryRows(ctx, sql, userEmail, pattern)
+	rows, err := d.queryRows(ctx, sql, userEmail)
 	if err != nil {
 		return nil, err
 	}

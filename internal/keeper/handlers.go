@@ -10,7 +10,7 @@ import (
 )
 
 func (s *KeeperService) Fetch(ctx context.Context, in *kpb.FetchRequest) (*kpb.FetchResponse, error) {
-	secrets, err := s.store.SecretList(context.Background(), in.GetUserEmail(), in.GetPattern())
+	secrets, err := s.store.SecretList(context.Background(), in.GetUserEmail())
 	if err != nil {
 		slog.Error("message", slog.String("func",
 			common.DotJoin(ServiceName, "Fetch", "SecretList")), slog.String("error", err.Error()))

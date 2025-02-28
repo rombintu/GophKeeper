@@ -3,34 +3,35 @@ package tui
 import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
-var (
-	activeStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("62")).MarginRight(2)
-	inactiveStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240")).MarginRight(2)
-	errorStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
-)
+type Profile struct {
+	Server  string
+	Email   string
+	KeyPath string
+	Token   string
+}
 
 type model struct {
+	login       bool
 	currentPage string
 	inputs      []textinput.Model
 	focused     int
-	filePath    string
+	profile     Profile
 	err         error
 }
 
 func InitialModel() model {
 	ti := make([]textinput.Model, 3)
 	ti[0] = textinput.New()
-	ti[0].Placeholder = "AuthService URL"
+	ti[0].Placeholder = "Server"
 	ti[0].Focus()
 
 	ti[1] = textinput.New()
 	ti[1].Placeholder = "Email"
 
 	ti[2] = textinput.New()
-	ti[2].Placeholder = "GPG Key"
+	ti[2].Placeholder = "Path to GPG Key"
 
 	return model{
 		currentPage: "auth",

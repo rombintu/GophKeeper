@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"strings"
 
 	apb "github.com/rombintu/GophKeeper/internal/proto/auth"
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
@@ -52,17 +51,10 @@ func (md *MemoryDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) er
 	return nil
 }
 
-func (md *MemoryDriver) SecretList(ctx context.Context, userEmail string, pattern string) ([]*kpb.Secret, error) {
+func (md *MemoryDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.Secret, error) {
 	var founded []*kpb.Secret
-	all := false
-	if pattern == "" || pattern == "*" {
-		all = true
-	}
 	for _, s := range md.Secrets {
 		if s.GetUserEmail() == userEmail {
-			if !all && !strings.Contains(s.Title, pattern) {
-				continue
-			}
 			founded = append(founded, s)
 		}
 	}

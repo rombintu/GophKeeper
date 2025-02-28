@@ -7,12 +7,21 @@ import (
 )
 
 func (m model) View() string {
-	if m.currentPage != "auth" {
-		return fmt.Sprintf("Main page!\nAuthService: %s\nEmail: %s\nGPG Key: %s\n",
-			m.inputs[0].Value(), m.inputs[1].Value(), m.filePath)
-	}
+	if m.login {
+		return fmt.Sprintf("Main page!\nServer: %s\nEmail: %s\nGPG Key: %s\n",
+			m.inputs[0].Value(), m.profile.Email, m.profile.KeyPath)
 
+	} else {
+		return m.authPage()
+	}
+}
+
+func (m model) authPage() string {
 	var s string
+
+	s += headerStyle.Render("GophKeeper")
+	s += "\n"
+
 	for i := range m.inputs {
 		if i == m.focused {
 			s += activeStyle.Render(">") + m.inputs[i].View() + "\n"
@@ -21,14 +30,12 @@ func (m model) View() string {
 		}
 	}
 
-	fileLabel := "Login"
-	if m.filePath != "" {
-		fileLabel = m.filePath
-	}
+	loginLabel := "Go"
+
 	if m.focused == len(m.inputs) {
-		s += activeStyle.Render(">") + fileLabel + "\n"
+		s += activeStyle.Render(">") + loginLabel + "\n"
 	} else {
-		s += inactiveStyle.Render(" ") + fileLabel + "\n"
+		s += inactiveStyle.Render(" ") + loginLabel + "\n"
 	}
 
 	if m.err != nil {

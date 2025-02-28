@@ -66,7 +66,6 @@ func TestMemoryDriver_SecretList(t *testing.T) {
 	)
 	type args struct {
 		UserEmail string
-		pattern   string
 	}
 	tests := []struct {
 		name     string
@@ -76,32 +75,32 @@ func TestMemoryDriver_SecretList(t *testing.T) {
 	}{
 		{
 			name:     "unknown_user_id",
-			args:     args{UserEmail: "0", pattern: ""},
+			args:     args{UserEmail: "0"},
 			wantSize: 0,
 			wantErr:  false,
 		},
 		{
 			name:     "1_user_id_all",
-			args:     args{UserEmail: "1", pattern: ""},
+			args:     args{UserEmail: "1"},
 			wantSize: 2,
 			wantErr:  false,
 		},
 		{
 			name:     "1_user_id_notfounded",
-			args:     args{UserEmail: "1", pattern: "no"},
+			args:     args{UserEmail: "1"},
 			wantSize: 0,
 			wantErr:  false,
 		},
 		{
 			name:     "2_user_id_all",
-			args:     args{UserEmail: "2", pattern: "*"},
+			args:     args{UserEmail: "2"},
 			wantSize: 1,
 			wantErr:  false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := md.SecretList(ctx, tt.args.UserEmail, tt.args.pattern)
+			got, err := md.SecretList(ctx, tt.args.UserEmail)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MemoryDriver.SecretList() error = %v, wantErr %v", err, tt.wantErr)
 				return
