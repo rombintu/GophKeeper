@@ -13,11 +13,21 @@ import (
 func main() {
 	logger.InitLogger("local")
 
-	store := storage.NewSecretManager("mem://", "client")
+	store := storage.NewClientManager("bolt:///tmp/bolt.db")
+	ctx := context.Background()
+	if err := store.Open(ctx); err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := store.Close(ctx); err != nil {
+			log.Fatal(err)
+		}
+	}()
 	man := cli.NewManager(store)
+	man.Configure()
 	app := cli.NewApp(man)
 
-	if err := app.Cmd.Run(context.Background(), os.Args); err != nil {
+	if err := app.Cmd.Run(ctx, os.Args); err != nil {
 		log.Fatal(err)
 	}
 

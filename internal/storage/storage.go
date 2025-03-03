@@ -13,18 +13,19 @@ import (
 const (
 	memDriver = "mem"
 	pgxDriver = "postgres" // TODO
+	bltDriver = "bolt"
 )
 
-func parseDriver(driverPath string) (string, string) {
+func parseDriver(driverPath string) (string, string, string) {
 	data := strings.Split(driverPath, "://")
 	if len(data) == 2 {
-		return data[0], driverPath
+		return data[0], driverPath, data[1]
 	}
 	slog.Warn("parse driver failed",
 		slog.String("got", driverPath),
 		slog.String("default", memDriver),
 	)
-	return memDriver, ""
+	return memDriver, "", ""
 }
 
 type Driver interface {
@@ -47,13 +48,21 @@ type SecretManager interface {
 	SecretPurge(ctx context.Context, secret *kpb.Secret) error
 }
 
+type ClientManager interface {
+	SecretManager
+	SaveProfile() error
+	LoadProfile() error
+}
+
 func NewDriver(driverPath, serviceName string) Driver {
-	driverName, driverURL := parseDriver(driverPath)
+	driverName, driverURL, driverPathFile := parseDriver(driverPath)
 	switch driverName { // TODO
 	case memDriver:
 		return &drivers.MemoryDriver{}
 	case pgxDriver:
 		return drivers.NewPgxDriver(driverURL, serviceName)
+	case bltDriver:
+		return drivers.NewBoltDriver(driverPathFile)
 	}
 	return nil
 }
@@ -65,5 +74,8 @@ func NewUserManager(driverPath, serviceName string) UserManager {
 
 func NewSecretManager(driverPath, serviceName string) SecretManager {
 	return NewDriver(driverPath, serviceName).(SecretManager)
+}
 
+func NewClientManager(driverPath string) ClientManager {
+	return NewDriver(driverPath, "").(ClientManager)
 }

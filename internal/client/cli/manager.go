@@ -10,15 +10,19 @@ import (
 )
 
 type Manager struct {
-	store   storage.SecretManager
+	store   storage.ClientManager
 	profile Profile
 }
 
-func NewManager(store storage.SecretManager) *Manager {
+func NewManager(store storage.ClientManager) *Manager {
 	return &Manager{
 		store:   store,
 		profile: Profile{},
 	}
+}
+
+func (m *Manager) Configure() error {
+	return m.store.Configure(context.Background())
 }
 
 func (m *Manager) SecretList(ctx context.Context) error {
