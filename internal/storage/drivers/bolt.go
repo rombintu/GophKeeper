@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
+	"log/slog"
 
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	"github.com/rombintu/GophKeeper/lib/crypto"
@@ -71,7 +72,7 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 		}
 		hash := crypto.GetHash(buf.Bytes())
 		if err := b.Put(
-			[]byte(fmt.Sprintf("%s_%s", secret.UserEmail, hash)),
+			[]byte(fmt.Sprintf("%s:::%s", secret.UserEmail, hash)),
 			buf.Bytes()); err != nil {
 			return err
 		}
@@ -87,14 +88,17 @@ func (bd *BoltDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.
 		if b == nil {
 			return fmt.Errorf("bucket %s does not exist", secretsTable)
 		}
-		c := b.Cursor()
 
 		var secretsEncoded [][]byte
 
-		for k, v := c.Seek([]byte(userEmail)); k != nil &&
-			bytes.HasPrefix(k, []byte(userEmail)); _, v = c.Next() {
-			secretsEncoded = append(secretsEncoded, v)
-		}
+		b.ForEach(func(k, v []byte) error {
+			if bytes.HasPrefix(k, []byte(userEmail)) {
+				slog.Debug("secret founded", slog.String("secret", string(v)))
+				secretsEncoded = append(secretsEncoded, v)
+			}
+			return nil
+		})
+
 		var buf bytes.Buffer
 		for _, s := range secretsEncoded {
 			buf.Reset()

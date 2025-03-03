@@ -11,13 +11,13 @@ import (
 
 type Manager struct {
 	store   storage.ClientManager
-	profile Profile
+	profile *Profile
 }
 
-func NewManager(store storage.ClientManager) *Manager {
+func NewManager(profile *Profile, store storage.ClientManager) *Manager {
 	return &Manager{
 		store:   store,
-		profile: Profile{},
+		profile: profile,
 	}
 }
 
@@ -26,7 +26,7 @@ func (m *Manager) Configure() error {
 }
 
 func (m *Manager) SecretList(ctx context.Context) error {
-	secrets, err := m.store.SecretList(ctx, m.profile.Email)
+	secrets, err := m.store.SecretList(ctx, m.profile.user.GetEmail())
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (m *Manager) SecretCreate(ctx context.Context, secret models.SecretAdapter)
 	newSecret := &kpb.Secret{
 		Title:      secret.Title(),
 		SecretType: secret.Type(),
-		UserEmail:  m.profile.Email,
+		UserEmail:  m.profile.user.GetEmail(),
 		Payload:    secret.Encode(),
 	}
 	if err := m.store.SecretCreate(ctx, newSecret); err != nil {

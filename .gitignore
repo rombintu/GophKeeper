@@ -8,3 +8,6 @@ cmd/sync/sync
 
 profiles/*
 !profiles/.gitkeep
+
+*.db
+*.bolt

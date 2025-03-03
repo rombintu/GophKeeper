@@ -23,7 +23,8 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
-	man := cli.NewManager(store)
+	profile := cli.NewProfile("./profiles/private-key.asc")
+	man := cli.NewManager(profile, store)
 	man.Configure()
 	app := cli.NewApp(man)
 
