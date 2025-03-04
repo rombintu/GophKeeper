@@ -13,7 +13,14 @@ import (
 func main() {
 	logger.InitLogger("local")
 
-	store := storage.NewClientManager("bolt:///tmp/bolt.db")
+	profile := cli.NewProfile("./profiles/private-key.asc")
+	store := storage.NewClientManager(storage.DriverOpts{
+		ServiceName: "client",
+		DriverPath:  "bolt:///tmp/bolt.db",
+		CryptoKey:   profile.GetKey(),
+	})
+	man := cli.NewManager(profile, store)
+	man.Configure()
 	ctx := context.Background()
 	if err := store.Open(ctx); err != nil {
 		log.Fatal(err)
@@ -23,9 +30,6 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
-	profile := cli.NewProfile("./profiles/private-key.asc")
-	man := cli.NewManager(profile, store)
-	man.Configure()
 	app := cli.NewApp(man)
 
 	if err := app.Cmd.Run(ctx, os.Args); err != nil {

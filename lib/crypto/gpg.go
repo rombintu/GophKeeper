@@ -12,6 +12,8 @@ import (
 	proto "github.com/rombintu/GophKeeper/internal/proto/auth"
 )
 
+type Key openpgp.EntityList
+
 // LoadPublicKey загружает открытый ключ из файла
 func LoadPublicKey(filename string) (openpgp.EntityList, error) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -51,41 +53,41 @@ func LoadPrivateKey(filename string) (openpgp.EntityList, error) {
 }
 
 // Encrypt шифрует данные с использованием открытого ключа
-func Encrypt(key openpgp.EntityList, message string) (string, error) {
+func Encrypt(key openpgp.EntityList, message []byte) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	encryptedWriter, err := openpgp.Encrypt(buf, key, nil, nil, &packet.Config{})
 	if err != nil {
-		return "", fmt.Errorf("ошибка при создании шифровальщика: %w", err)
+		return nil, fmt.Errorf("ошибка при создании шифровальщика: %w", err)
 	}
 
-	_, err = encryptedWriter.Write([]byte(message))
+	_, err = encryptedWriter.Write(message)
 	if err != nil {
-		return "", fmt.Errorf("ошибка при записи данных для шифрования: %w", err)
+		return nil, fmt.Errorf("ошибка при записи данных для шифрования: %w", err)
 	}
 	encryptedWriter.Close()
 
-	return buf.String(), nil
+	return buf.Bytes(), nil
 }
 
 // Decrypt расшифровывает данные с использованием закрытого ключа
-func Decrypt(privateKey openpgp.EntityList, encryptedMessage string) (string, error) {
-	decbuf := bytes.NewBuffer([]byte(encryptedMessage))
+func Decrypt(privateKey openpgp.EntityList, encryptedMessage []byte) ([]byte, error) {
+	decbuf := bytes.NewBuffer(encryptedMessage)
 	block, err := armor.Decode(decbuf)
 	if err != nil {
-		return "", fmt.Errorf("ошибка при декодировании armored данных: %w", err)
+		return nil, fmt.Errorf("ошибка при декодировании armored данных: %w", err)
 	}
 
 	md, err := openpgp.ReadMessage(block.Body, privateKey, nil, &packet.Config{})
 	if err != nil {
-		return "", fmt.Errorf("ошибка при чтении зашифрованного сообщения: %w", err)
+		return nil, fmt.Errorf("ошибка при чтении зашифрованного сообщения: %w", err)
 	}
 
 	decryptedData, err := io.ReadAll(md.UnverifiedBody)
 	if err != nil {
-		return "", fmt.Errorf("ошибка при чтении расшифрованных данных: %w", err)
+		return nil, fmt.Errorf("ошибка при чтении расшифрованных данных: %w", err)
 	}
 
-	return string(decryptedData), nil
+	return decryptedData, nil
 }
 
 // GetKeyHash возвращает отпечаток (хеш) ключа

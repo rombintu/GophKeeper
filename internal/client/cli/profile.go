@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
 	proto "github.com/rombintu/GophKeeper/internal/proto/auth"
 	"github.com/rombintu/GophKeeper/lib/crypto"
 )
@@ -11,6 +12,7 @@ import (
 type Profile struct {
 	user  *proto.User
 	Token string
+	key   openpgp.EntityList
 }
 
 func NewProfile(keyPath string) *Profile {
@@ -27,5 +29,10 @@ func NewProfile(keyPath string) *Profile {
 	}
 	return &Profile{
 		user: user,
+		key:  master,
 	}
+}
+
+func (p *Profile) GetKey() openpgp.EntityList {
+	return p.key
 }

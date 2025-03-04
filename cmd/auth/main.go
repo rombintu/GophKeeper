@@ -46,7 +46,10 @@ func main() {
 	logger.InitLogger(cfg.Env)
 	common.Version(buildVersion, buildDate, buildCommit, auth.ServiceName)
 
-	store := storage.NewUserManager(cfg.DriverPath, auth.ServiceName)
+	store := storage.NewUserManager(storage.DriverOpts{
+		ServiceName: auth.ServiceName,
+		DriverPath:  cfg.DriverPath,
+	})
 	service := auth.NewAuthService(store, cfg)
 
 	service.Configure()

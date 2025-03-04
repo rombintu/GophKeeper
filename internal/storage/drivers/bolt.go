@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	"github.com/rombintu/GophKeeper/lib/crypto"
 	bolt "go.etcd.io/bbolt"
@@ -18,13 +19,15 @@ const (
 )
 
 type BoltDriver struct {
-	driver *bolt.DB
-	path   string
+	cryptoKey openpgp.EntityList
+	driver    *bolt.DB
+	path      string
 }
 
-func NewBoltDriver(path string) *BoltDriver {
+func NewBoltDriver(path string, cryptoKey openpgp.EntityList) *BoltDriver {
 	return &BoltDriver{
-		path: path,
+		cryptoKey: cryptoKey,
+		path:      path,
 	}
 }
 
@@ -66,14 +69,33 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 		}
 
 		var buf bytes.Buffer
+		// ENCODE DATA
 		encoder := gob.NewEncoder(&buf)
 		if err := encoder.Encode(secret); err != nil {
 			return fmt.Errorf("encode failed: %s", err.Error())
 		}
+
+		var data []byte
+		var keyset bool
+		var err error
+		// ENCRYPT DATA
+		if bd.cryptoKey != nil {
+			// Если установлен ключ, производим шифрование
+			data, err = crypto.Encrypt(bd.cryptoKey, buf.Bytes())
+			if err != nil {
+				return fmt.Errorf("encrypt failed: %s", err.Error())
+			}
+			// Устанавливаем флаг, что данные зашифрованны
+			keyset = true
+		} else {
+			data = buf.Bytes()
+			slog.Warn("key has not been installed, the cryptography is skipped")
+		}
+
 		hash := crypto.GetHash(buf.Bytes())
 		if err := b.Put(
-			[]byte(fmt.Sprintf("%s:::%s", secret.UserEmail, hash)),
-			buf.Bytes()); err != nil {
+			fmt.Appendf(nil, "%s:::%s:::%t", secret.UserEmail, hash, keyset),
+			data); err != nil {
 			return err
 		}
 		return nil

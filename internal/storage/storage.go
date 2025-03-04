@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
 	apb "github.com/rombintu/GophKeeper/internal/proto/auth"
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	"github.com/rombintu/GophKeeper/internal/storage/drivers"
@@ -54,28 +55,34 @@ type ClientManager interface {
 	LoadProfile() error
 }
 
-func NewDriver(driverPath, serviceName string) Driver {
-	driverName, driverURL, driverPathFile := parseDriver(driverPath)
+type DriverOpts struct {
+	ServiceName string
+	DriverPath  string
+	CryptoKey   openpgp.EntityList
+}
+
+func NewDriver(opts DriverOpts) Driver {
+	driverName, driverURL, driverPathFile := parseDriver(opts.DriverPath)
 	switch driverName { // TODO
 	case memDriver:
 		return &drivers.MemoryDriver{}
 	case pgxDriver:
-		return drivers.NewPgxDriver(driverURL, serviceName)
+		return drivers.NewPgxDriver(driverURL, opts.ServiceName)
 	case bltDriver:
-		return drivers.NewBoltDriver(driverPathFile)
+		return drivers.NewBoltDriver(driverPathFile, opts.CryptoKey)
 	}
 	return nil
 }
 
-func NewUserManager(driverPath, serviceName string) UserManager {
-	return NewDriver(driverPath, serviceName).(UserManager)
+func NewUserManager(opts DriverOpts) UserManager {
+	return NewDriver(opts).(UserManager)
 
 }
 
-func NewSecretManager(driverPath, serviceName string) SecretManager {
-	return NewDriver(driverPath, serviceName).(SecretManager)
+func NewSecretManager(opts DriverOpts) SecretManager {
+	return NewDriver(opts).(SecretManager)
 }
 
-func NewClientManager(driverPath string) ClientManager {
-	return NewDriver(driverPath, "").(ClientManager)
+func NewClientManager(opts DriverOpts) ClientManager {
+	return NewDriver(opts).(ClientManager)
 }

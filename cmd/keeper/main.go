@@ -30,7 +30,9 @@ func main() {
 	logger.InitLogger(cfg.Env)
 	common.Version(buildVersion, buildDate, buildCommit, keeper.ServiceName)
 
-	store := storage.NewSecretManager(cfg.DriverPath, keeper.ServiceName)
+	store := storage.NewSecretManager(storage.DriverOpts{
+		ServiceName: keeper.ServiceName,
+		DriverPath:  cfg.DriverPath})
 	service := keeper.NewKeeperService(store, cfg)
 
 	service.Configure()
