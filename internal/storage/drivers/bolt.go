@@ -115,20 +115,27 @@ func (bd *BoltDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.
 
 		b.ForEach(func(k, v []byte) error {
 			if bytes.HasPrefix(k, []byte(userEmail)) {
-				slog.Debug("secret founded", slog.String("secret", string(v)))
 				secretsEncoded = append(secretsEncoded, v)
 			}
 			return nil
 		})
 
 		var buf bytes.Buffer
-		for _, s := range secretsEncoded {
-			buf.Reset()
-			encoder := gob.NewDecoder(&buf)
-			var secret *kpb.Secret
-			if err := encoder.Decode(&s); err != nil {
-				return fmt.Errorf("decode failed: %s", err.Error())
+		for _, encoded := range secretsEncoded {
+			// Записываем закодированные данные в буфер
+			if _, err := buf.Write(encoded); err != nil {
+				return fmt.Errorf("buffer write failed: %w", err)
 			}
+
+			// Создаём декодер для буфера
+			decoder := gob.NewDecoder(&buf)
+			var secret *kpb.Secret
+
+			// Декодируем в переменную secret
+			if err := decoder.Decode(&secret); err != nil {
+				return fmt.Errorf("decode failed: %w", err)
+			}
+
 			secrets = append(secrets, secret)
 		}
 		return nil

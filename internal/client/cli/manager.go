@@ -2,7 +2,7 @@ package cli
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 
 	"github.com/rombintu/GophKeeper/internal/client/models"
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
@@ -31,7 +31,12 @@ func (m *Manager) SecretList(ctx context.Context) error {
 		return err
 	}
 	for _, s := range secrets {
-		fmt.Printf("%+v \n", s)
+		slog.Info("secret",
+			slog.String("title", s.GetTitle()),
+			slog.String("type", s.GetSecretType().String()),
+			slog.String("email", s.GetUserEmail()),
+			slog.String("payload", string(s.GetPayload())),
+		)
 	}
 	return nil
 }
