@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 type KeeperClient interface {
 	Fetch(ctx context.Context, in *FetchRequest, opts ...grpc.CallOption) (*FetchResponse, error)
 	Create(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreateMany(ctx context.Context, in *CreateBatchRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -50,6 +51,15 @@ func (c *keeperClient) Create(ctx context.Context, in *CreateRequest, opts ...gr
 	return out, nil
 }
 
+func (c *keeperClient) CreateMany(ctx context.Context, in *CreateBatchRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/proto.Keeper/CreateMany", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *keeperClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/proto.Keeper/Delete", in, out, opts...)
@@ -65,6 +75,7 @@ func (c *keeperClient) Delete(ctx context.Context, in *DeleteRequest, opts ...gr
 type KeeperServer interface {
 	Fetch(context.Context, *FetchRequest) (*FetchResponse, error)
 	Create(context.Context, *CreateRequest) (*emptypb.Empty, error)
+	CreateMany(context.Context, *CreateBatchRequest) (*emptypb.Empty, error)
 	Delete(context.Context, *DeleteRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedKeeperServer()
 }
@@ -78,6 +89,9 @@ func (UnimplementedKeeperServer) Fetch(context.Context, *FetchRequest) (*FetchRe
 }
 func (UnimplementedKeeperServer) Create(context.Context, *CreateRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+}
+func (UnimplementedKeeperServer) CreateMany(context.Context, *CreateBatchRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateMany not implemented")
 }
 func (UnimplementedKeeperServer) Delete(context.Context, *DeleteRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
@@ -131,6 +145,24 @@ func _Keeper_Create_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Keeper_CreateMany_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeeperServer).CreateMany(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.Keeper/CreateMany",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeeperServer).CreateMany(ctx, req.(*CreateBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Keeper_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteRequest)
 	if err := dec(in); err != nil {
@@ -163,6 +195,10 @@ var Keeper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Create",
 			Handler:    _Keeper_Create_Handler,
+		},
+		{
+			MethodName: "CreateMany",
+			Handler:    _Keeper_CreateMany_Handler,
 		},
 		{
 			MethodName: "Delete",

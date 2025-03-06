@@ -45,6 +45,7 @@ type UserManager interface {
 type SecretManager interface {
 	Driver
 	SecretCreate(ctx context.Context, secret *kpb.Secret) error
+	SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret) error
 	SecretList(ctx context.Context, userEmail string) ([]*kpb.Secret, error)
 	SecretPurge(ctx context.Context, secret *kpb.Secret) error
 }

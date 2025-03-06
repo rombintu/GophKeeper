@@ -31,6 +31,16 @@ func (s *KeeperService) Create(ctx context.Context, in *kpb.CreateRequest) (*emp
 	return &emptypb.Empty{}, nil
 }
 
+func (s *KeeperService) CreateBatch(ctx context.Context, in *kpb.CreateBatchRequest) (*emptypb.Empty, error) {
+	if err := s.store.SecretCreateBatch(context.Background(), in.GetSecrets()); err != nil {
+		slog.Error("message", slog.String("func",
+			common.DotJoin(ServiceName, "CreateBatch", "SecretCreateBatch")), slog.String("error", err.Error()))
+		return &emptypb.Empty{}, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
 func (s *KeeperService) Delete(ctx context.Context, in *kpb.DeleteRequest) (*emptypb.Empty, error) {
 	if err := s.store.SecretPurge(context.Background(), in.GetSecret()); err != nil {
 		slog.Error("message", slog.String("func",

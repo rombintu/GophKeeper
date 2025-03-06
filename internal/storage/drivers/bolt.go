@@ -103,6 +103,11 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 	return nil
 }
 
+// UNUSED FUNCTION
+func (bd *BoltDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret) error {
+	return nil
+}
+
 func (bd *BoltDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.Secret, error) {
 	var secrets []*kpb.Secret
 	bd.driver.View(func(tx *bolt.Tx) error {

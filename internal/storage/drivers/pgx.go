@@ -2,6 +2,7 @@ package drivers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"path/filepath"
@@ -118,6 +119,30 @@ func (d *PgxDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) error 
 		return err
 	}
 	return nil
+}
+
+func (d *PgxDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret) error {
+	tx, err := d.conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	sql := `INSERT INTO secrets (
+		title, secret_type, user_email, version, payload
+		) VALUES ($1, $2, $3, $4, $5)`
+
+	var errs []error
+	for _, s := range secrets {
+		if _, err := d.exec(ctx, sql,
+			s.GetTitle(), s.GetSecretType(),
+			s.GetUserEmail(), s.GetVersion(),
+			s.GetPayload(),
+		); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
 }
 
 func (d *PgxDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.Secret, error) {

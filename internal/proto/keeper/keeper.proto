@@ -32,6 +32,11 @@ message CreateRequest {
     Secret secret = 2;
 }
 
+message CreateBatchRequest {
+    string user_email = 1;
+    repeated Secret secrets = 2;
+}
+
 message DeleteRequest {
     string user_email = 1;
     Secret secret = 2;
@@ -40,5 +45,6 @@ message DeleteRequest {
 service Keeper {
     rpc Fetch(FetchRequest) returns (FetchResponse);
     rpc Create(CreateRequest) returns (google.protobuf.Empty);
+    rpc CreateMany(CreateBatchRequest) returns (google.protobuf.Empty);
     rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
 }

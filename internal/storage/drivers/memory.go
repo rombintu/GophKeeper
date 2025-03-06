@@ -51,6 +51,19 @@ func (md *MemoryDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) er
 	return nil
 }
 
+func (md *MemoryDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret) error {
+	for _, s1 := range secrets {
+		for _, s2 := range md.Secrets {
+			if s1.GetTitle() == s2.GetTitle() && s1.GetUserEmail() == s2.GetUserEmail() {
+				s1.Version = s2.GetVersion() + 1
+				break
+			}
+		}
+		md.Secrets = append(md.Secrets, s1)
+	}
+	return nil
+}
+
 func (md *MemoryDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.Secret, error) {
 	var founded []*kpb.Secret
 	for _, s := range md.Secrets {
