@@ -54,3 +54,7 @@ func (m *Manager) SecretCreate(ctx context.Context, secret models.SecretAdapter)
 
 	return nil
 }
+
+func (m *Manager) ProfileInit(ctx context.Context, keyPath string) error {
+	return nil
+}

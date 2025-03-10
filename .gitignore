@@ -5,6 +5,7 @@ cmd/storage/storage
 cmd/sync/sync
 
 .vscode
+*.json
 
 profiles/*
 !profiles/.gitkeep

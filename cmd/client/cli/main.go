@@ -16,7 +16,7 @@ func main() {
 	profile := cli.NewProfile("./profiles/private-key.asc")
 	store := storage.NewClientManager(storage.DriverOpts{
 		ServiceName: "client",
-		DriverPath:  "bolt:///tmp/bolt.db",
+		DriverPath:  profile.GetDriverPath(),
 		CryptoKey:   profile.GetKey(),
 	})
 	ctx := context.Background()

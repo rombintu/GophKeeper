@@ -4,7 +4,7 @@ package proto;
 
 message User {
     string email = 1;
-    bytes hex_keys = 2; // Для UserGet - пустое
+    bytes key_checksum = 2; // Для UserGet - пустое
 }
 
 message LoginRequest {

@@ -88,19 +88,19 @@ func (d *PgxDriver) Ping(ctx context.Context, monitoring bool) error {
 }
 
 func (d *PgxDriver) UserGet(ctx context.Context, user *apb.User) (*apb.User, error) {
-	sql := `SELECT email, hex_keys FROM users WHERE email=$1`
+	sql := `SELECT email, key_checksum FROM users WHERE email=$1`
 	row := d.queryRow(ctx, sql, user.GetEmail())
 	var findUser apb.User
 
-	if err := row.Scan(&findUser.Email, &findUser.HexKeys); err != nil {
+	if err := row.Scan(&findUser.Email, &findUser.KeyChecksum); err != nil {
 		return nil, err
 	}
 	return &findUser, nil
 }
 
 func (d *PgxDriver) UserCreate(ctx context.Context, user *apb.User) error {
-	sql := `INSERT INTO users (email, hex_keys) VALUES ($1, $2)`
-	if _, err := d.exec(ctx, sql, user.GetEmail(), user.GetHexKeys()); err != nil {
+	sql := `INSERT INTO users (email, key_checksum) VALUES ($1, $2)`
+	if _, err := d.exec(ctx, sql, user.GetEmail(), user.GetKeyChecksum()); err != nil {
 		return err
 	}
 	return nil

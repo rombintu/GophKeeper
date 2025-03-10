@@ -11,6 +11,10 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+const (
+	appDirName = "gophkeeper"
+)
+
 type App struct {
 	Cmd *cli.Command
 }
@@ -19,6 +23,26 @@ func NewApp(man *Manager) *App {
 	app := &App{
 		Cmd: &cli.Command{
 			Commands: []*cli.Command{
+				{
+					Name:  "init",
+					Usage: "create new profile",
+					Flags: []cli.Flag{
+						&cli.StringFlag{
+							Name:  "key",
+							Value: "",
+							Usage: "Path to gpg key",
+							Validator: func(s string) error {
+								if s == "" {
+									return errors.New("path cannot be empty")
+								}
+								return nil
+							},
+						},
+					},
+					Action: func(ctx context.Context, cmd *cli.Command) error {
+						return man.ProfileInit(ctx, cmd.String("key"))
+					},
+				},
 				{
 					Name:    "list",
 					Aliases: []string{"l"},

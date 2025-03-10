@@ -19,7 +19,7 @@ func (md *MemoryDriver) UserGet(ctx context.Context, user *apb.User) (*apb.User,
 		if user.GetEmail() == u.GetEmail() {
 			slog.Debug("founded user",
 				slog.String("email", u.GetEmail()),
-				slog.String("fingerprint", string(u.GetHexKeys())))
+				slog.String("fingerprint", string(u.GetKeyChecksum())))
 			return u, nil
 		}
 	}
@@ -36,7 +36,7 @@ func (md *MemoryDriver) UserCreate(ctx context.Context, user *apb.User) error {
 	md.Users = append(md.Users, user)
 	slog.Debug("user created",
 		slog.String("email", user.GetEmail()),
-		slog.String("fingerprint", string(user.GetHexKeys())))
+		slog.String("fingerprint", string(user.GetKeyChecksum())))
 	return nil
 }
 

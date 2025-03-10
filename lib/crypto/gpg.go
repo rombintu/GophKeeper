@@ -102,7 +102,7 @@ func GetProfile(privateKey openpgp.EntityList) (*proto.User, error) {
 	user := &proto.User{}
 	// Проходим по списку ключей и извлекаем profile
 	for _, entity := range privateKey {
-		user.HexKeys = entity.PrimaryKey.Fingerprint
+		user.KeyChecksum = entity.PrimaryKey.Fingerprint
 		for _, identity := range entity.Identities {
 			if identity.UserId.Email == "" {
 				continue

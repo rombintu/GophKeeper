@@ -53,7 +53,7 @@ func (s *AuthService) Login(ctx context.Context, in *apb.LoginRequest) (*apb.Log
 	}
 
 	r := apb.LoginResponse{}
-	if reflect.DeepEqual(in.User.GetHexKeys(), userFounded.GetHexKeys()) {
+	if reflect.DeepEqual(in.User.GetKeyChecksum(), userFounded.GetKeyChecksum()) {
 		token, err := jwt.NewToken(in.GetUser(), s.config.Secret, s.config.TokenExp)
 		if err != nil {
 			slog.Error("message", slog.String("func",

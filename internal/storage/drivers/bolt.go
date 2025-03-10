@@ -3,20 +3,32 @@ package drivers
 import (
 	"bytes"
 	"context"
-	"encoding/gob"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/google/uuid"
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	"github.com/rombintu/GophKeeper/lib/crypto"
 	bolt "go.etcd.io/bbolt"
 )
 
 const (
-	profileTable = "profile"
 	secretsTable = "secrets"
+	metaTable    = "meta"
 )
+
+type SecretMeta struct {
+	Title      string
+	SecretType kpb.Secret_SecretType
+	Version    int64
+	CreatedAt  int64
+}
+
+type SecretData struct {
+	Payload []byte
+}
 
 type BoltDriver struct {
 	cryptoKey openpgp.EntityList
@@ -50,7 +62,7 @@ func (bd *BoltDriver) Ping(ctx context.Context, monitoring bool) error {
 // Create tables
 func (bd *BoltDriver) Configure(ctx context.Context) error {
 	bd.driver.Update(func(tx *bolt.Tx) error {
-		for _, table := range []string{profileTable, secretsTable} {
+		for _, table := range []string{metaTable, secretsTable} {
 			_, err := tx.CreateBucketIfNotExists([]byte(table))
 			if err != nil {
 				return err
@@ -62,45 +74,52 @@ func (bd *BoltDriver) Configure(ctx context.Context) error {
 }
 
 func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) error {
-	bd.driver.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(secretsTable))
-		if b == nil {
-			return fmt.Errorf("bucket %s does not exist", secretsTable)
-		}
+	tx, err := bd.driver.Begin(true)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
-		var buf bytes.Buffer
-		// ENCODE DATA
-		encoder := gob.NewEncoder(&buf)
-		if err := encoder.Encode(secret); err != nil {
-			return fmt.Errorf("encode failed: %s", err.Error())
-		}
+	dataBucket := tx.Bucket([]byte(secretsTable))
+	metaBucket := tx.Bucket([]byte(metaTable))
 
-		var data []byte
-		var keyset bool
-		var err error
-		// ENCRYPT DATA
-		if bd.cryptoKey != nil {
-			// Если установлен ключ, производим шифрование
-			data, err = crypto.Encrypt(bd.cryptoKey, buf.Bytes())
-			if err != nil {
-				return fmt.Errorf("encrypt failed: %s", err.Error())
-			}
-			// Устанавливаем флаг, что данные зашифрованны
-			keyset = true
-		} else {
-			data = buf.Bytes()
-			slog.Warn("key has not been installed, the cryptography is skipped")
-		}
+	meta := SecretMeta{
+		Title:      secret.GetTitle(),
+		SecretType: secret.GetSecretType(),
+		Version:    secret.GetVersion(),
+		CreatedAt:  secret.GetCreatedAt(),
+	}
 
-		hash := crypto.GetHash(buf.Bytes())
-		if err := b.Put(
-			fmt.Appendf(nil, "%s:::%s:::%t", secret.UserEmail, hash, keyset),
-			data); err != nil {
-			return err
-		}
-		return nil
-	})
-	return nil
+	data := SecretData{
+		Payload: secret.GetPayload(),
+	}
+
+	metaBytes, err := json.Marshal(meta)
+	if err != nil {
+		return err
+	}
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	hash := crypto.GetHash(dataBytes)
+	uuid := uuid.New().String()
+	key := fmt.Sprintf("%s:::%s:::%s", secret.GetUserEmail(), hash, uuid)
+
+	dataBytesEncrypt, err := crypto.Encrypt(bd.cryptoKey, dataBytes)
+	if err != nil {
+		return fmt.Errorf("encrypt data failed: %s", err.Error())
+	}
+
+	if err := metaBucket.Put([]byte(key), metaBytes); err != nil {
+		return err
+	}
+	if err := dataBucket.Put([]byte(key), dataBytesEncrypt); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+
 }
 
 // UNUSED FUNCTION
@@ -110,41 +129,55 @@ func (bd *BoltDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secr
 
 func (bd *BoltDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.Secret, error) {
 	var secrets []*kpb.Secret
-	bd.driver.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(secretsTable))
-		if b == nil {
-			return fmt.Errorf("bucket %s does not exist", secretsTable)
+	if userEmail == "" {
+		return nil, errors.New("user email is empty")
+	}
+	if bd.cryptoKey == nil {
+		return nil, errors.New("crypto key is not set")
+	}
+	if err := bd.driver.View(func(tx *bolt.Tx) error {
+		dataBucket := tx.Bucket([]byte(secretsTable))
+		metaBucket := tx.Bucket([]byte(metaTable))
+
+		cursor := metaBucket.Cursor()
+		prefix := []byte(userEmail + ":::")
+
+		for k, v := cursor.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = cursor.Next() {
+			// Декодирование метаданных
+			var meta SecretMeta
+			if err := json.Unmarshal(v, &meta); err != nil {
+				return err
+			}
+
+			// Получение данных по тому же ключу
+			dataEnc := dataBucket.Get(k)
+			if dataEnc == nil {
+				return fmt.Errorf("not found secret for key %s", k)
+			}
+
+			dataBytes, err := crypto.Decrypt(bd.cryptoKey, dataEnc)
+			if err != nil {
+				return err
+			}
+			var data SecretData
+			if err := json.Unmarshal(dataBytes, &data); err != nil {
+				return err
+			}
+
+			secrets = append(secrets, &kpb.Secret{
+				Title:      meta.Title,
+				SecretType: meta.SecretType,
+				UserEmail:  userEmail,
+				CreatedAt:  meta.CreatedAt,
+				Version:    meta.Version,
+				Payload:    data.Payload,
+			})
 		}
 
-		var secretsEncoded [][]byte
-
-		b.ForEach(func(k, v []byte) error {
-			if bytes.HasPrefix(k, []byte(userEmail)) {
-				secretsEncoded = append(secretsEncoded, v)
-			}
-			return nil
-		})
-
-		var buf bytes.Buffer
-		for _, encoded := range secretsEncoded {
-			// Записываем закодированные данные в буфер
-			if _, err := buf.Write(encoded); err != nil {
-				return fmt.Errorf("buffer write failed: %w", err)
-			}
-
-			// Создаём декодер для буфера
-			decoder := gob.NewDecoder(&buf)
-			var secret *kpb.Secret
-
-			// Декодируем в переменную secret
-			if err := decoder.Decode(&secret); err != nil {
-				return fmt.Errorf("decode failed: %w", err)
-			}
-
-			secrets = append(secrets, secret)
-		}
 		return nil
-	})
+	}); err != nil {
+		return nil, err
+	}
 	return secrets, nil
 }
 
