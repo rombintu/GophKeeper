@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/google/uuid"
@@ -15,6 +16,7 @@ import (
 )
 
 const (
+	profileTable = "profile"
 	secretsTable = "secrets"
 	metaTable    = "meta"
 )
@@ -62,7 +64,7 @@ func (bd *BoltDriver) Ping(ctx context.Context, monitoring bool) error {
 // Create tables
 func (bd *BoltDriver) Configure(ctx context.Context) error {
 	bd.driver.Update(func(tx *bolt.Tx) error {
-		for _, table := range []string{metaTable, secretsTable} {
+		for _, table := range []string{metaTable, secretsTable, profileTable} {
 			_, err := tx.CreateBucketIfNotExists([]byte(table))
 			if err != nil {
 				return err
@@ -157,7 +159,8 @@ func (bd *BoltDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.
 
 			dataBytes, err := crypto.Decrypt(bd.cryptoKey, dataEnc)
 			if err != nil {
-				return err
+				slog.Warn("failed decrypt secret. skip...", slog.String("key", string(k)))
+				continue
 			}
 			var data SecretData
 			if err := json.Unmarshal(dataBytes, &data); err != nil {
@@ -185,10 +188,35 @@ func (bd *BoltDriver) SecretPurge(ctx context.Context, secret *kpb.Secret) error
 	return nil
 }
 
-func (bd *BoltDriver) SaveProfile() error {
+func (bd *BoltDriver) Set(ctx context.Context, key, value []byte) error {
+	return bd.driver.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(profileTable))
+		if err := b.Put(key, value); err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (bd *BoltDriver) Get(ctx context.Context, key []byte) ([]byte, error) {
+	var data []byte
+	if err := bd.driver.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(profileTable))
+		data = b.Get(key)
+		if data == nil {
+			return fmt.Errorf("not found %s", key)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func (bd *BoltDriver) SyncPull(ctx context.Context, addr string) error {
 	return nil
 }
 
-func (bd *BoltDriver) LoadProfile() error {
+func (bd *BoltDriver) SyncPush(ctx context.Context, addr string) error {
 	return nil
 }

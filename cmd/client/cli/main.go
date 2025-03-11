@@ -13,6 +13,15 @@ import (
 func main() {
 	logger.InitLogger("local")
 
+	man := cli.NewManager()
+	// keyPath, err := man.ConfigGet(context.Background(), "key-path")
+	// if err != nil {
+	// 	slog.Warn("failed get key-path. use config set")
+	// 	os.Exit(0)
+	// }
+
+	// Нужно переделать, чтобы подгружался ключ из базы
+	// Изменить порядок
 	profile := cli.NewProfile("./profiles/private-key.asc")
 	store := storage.NewClientManager(storage.DriverOpts{
 		ServiceName: "client",
@@ -28,7 +37,8 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
-	man := cli.NewManager(profile, store)
+	man.SetStore(store)
+	man.SetProfile(profile)
 	man.Configure()
 	app := cli.NewApp(man)
 

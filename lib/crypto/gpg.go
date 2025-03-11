@@ -55,7 +55,14 @@ func LoadPrivateKey(filename string) (openpgp.EntityList, error) {
 // Encrypt шифрует данные с использованием открытого ключа
 func Encrypt(key openpgp.EntityList, message []byte) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	encryptedWriter, err := openpgp.Encrypt(buf, key, nil, nil, &packet.Config{})
+
+	// Создание armor-обертки
+	armorWriter, err := armor.Encode(buf, "PGP MESSAGE", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	encryptedWriter, err := openpgp.Encrypt(armorWriter, key, nil, nil, &packet.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при создании шифровальщика: %w", err)
 	}
@@ -65,19 +72,20 @@ func Encrypt(key openpgp.EntityList, message []byte) ([]byte, error) {
 		return nil, fmt.Errorf("ошибка при записи данных для шифрования: %w", err)
 	}
 	encryptedWriter.Close()
+	armorWriter.Close()
 
 	return buf.Bytes(), nil
 }
 
 // Decrypt расшифровывает данные с использованием закрытого ключа
-func Decrypt(privateKey openpgp.EntityList, encryptedMessage []byte) ([]byte, error) {
+func Decrypt(key openpgp.EntityList, encryptedMessage []byte) ([]byte, error) {
 	decbuf := bytes.NewBuffer(encryptedMessage)
 	block, err := armor.Decode(decbuf)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при декодировании armored данных: %w", err)
 	}
 
-	md, err := openpgp.ReadMessage(block.Body, privateKey, nil, &packet.Config{})
+	md, err := openpgp.ReadMessage(block.Body, key, nil, &packet.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при чтении зашифрованного сообщения: %w", err)
 	}

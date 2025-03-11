@@ -52,8 +52,10 @@ type SecretManager interface {
 
 type ClientManager interface {
 	SecretManager
-	SaveProfile() error
-	LoadProfile() error
+	SyncPush(ctx context.Context, addr string) error
+	SyncPull(ctx context.Context, addr string) error
+	Set(ctx context.Context, key []byte, value []byte) error
+	Get(ctx context.Context, key []byte) ([]byte, error)
 }
 
 type DriverOpts struct {

@@ -14,11 +14,16 @@ type Manager struct {
 	profile *Profile
 }
 
-func NewManager(profile *Profile, store storage.ClientManager) *Manager {
-	return &Manager{
-		store:   store,
-		profile: profile,
-	}
+func NewManager() *Manager {
+	return &Manager{}
+}
+
+func (m *Manager) SetStore(store storage.ClientManager) {
+	m.store = store
+}
+
+func (m *Manager) SetProfile(profile *Profile) {
+	m.profile = profile
 }
 
 func (m *Manager) Configure() error {
@@ -55,6 +60,19 @@ func (m *Manager) SecretCreate(ctx context.Context, secret models.SecretAdapter)
 	return nil
 }
 
-func (m *Manager) ProfileInit(ctx context.Context, keyPath string) error {
+func (m *Manager) ConfigSet(ctx context.Context, values map[string]string) error {
+	for k, v := range values {
+		if err := m.store.Set(ctx, []byte(k), []byte(v)); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func (m *Manager) ConfigGet(ctx context.Context, key string) (string, error) {
+	data, err := m.store.Get(ctx, []byte(key))
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }

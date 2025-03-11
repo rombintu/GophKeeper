@@ -24,23 +24,39 @@ func NewApp(man *Manager) *App {
 		Cmd: &cli.Command{
 			Commands: []*cli.Command{
 				{
-					Name:  "init",
-					Usage: "create new profile",
-					Flags: []cli.Flag{
-						&cli.StringFlag{
-							Name:  "key",
-							Value: "",
-							Usage: "Path to gpg key",
-							Validator: func(s string) error {
-								if s == "" {
-									return errors.New("path cannot be empty")
+					Name:  "config",
+					Usage: "Manage config",
+					Commands: []*cli.Command{
+						{
+							Name:  "set",
+							Usage: "Set global configuration",
+							Flags: []cli.Flag{
+								&cli.StringFlag{
+									Name:  "key-path",
+									Usage: "Path to gpg key",
+								},
+								&cli.StringFlag{
+									Name:  "auth-address",
+									Usage: "Address to Auth service",
+								},
+								&cli.StringFlag{
+									Name:  "sync-address",
+									Usage: "Address to Sync service",
+								},
+							},
+							Action: func(ctx context.Context, cmd *cli.Command) error {
+								// Собираем все значения флагов в map
+								configValues := make(map[string]string)
+
+								for _, k := range []string{"key-path", "auth-address", "sync-address"} {
+									if cmd.IsSet(k) {
+										configValues[k] = cmd.String(k)
+									}
 								}
-								return nil
+								// Передаем значения в общую функцию
+								return man.ConfigSet(ctx, configValues)
 							},
 						},
-					},
-					Action: func(ctx context.Context, cmd *cli.Command) error {
-						return man.ProfileInit(ctx, cmd.String("key"))
 					},
 				},
 				{
