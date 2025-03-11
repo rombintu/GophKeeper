@@ -15,29 +15,6 @@ import (
 
 type Key openpgp.EntityList
 
-// LoadPublicKey загружает открытый ключ из файла
-func LoadPublicKey(filename string) (openpgp.EntityList, error) {
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		return nil, fmt.Errorf("файл %s не найден", filename)
-	}
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("ошибка при открытии файла открытого ключа: %w", err)
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			slog.Warn("failed close file", slog.String("error", err.Error()))
-		}
-	}()
-
-	entityList, err := openpgp.ReadArmoredKeyRing(file)
-	if err != nil {
-		return nil, fmt.Errorf("ошибка при чтении открытого ключа: %w", err)
-	}
-
-	return entityList, nil
-}
-
 // LoadPrivateKey загружает закрытый ключ из файла
 func LoadPrivateKey(filename string) (openpgp.EntityList, error) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -89,7 +66,6 @@ func Encrypt(key openpgp.EntityList, message []byte) ([]byte, error) {
 		slog.Error("failed close writer", slog.String("error", err.Error()))
 		return nil, err
 	}
-
 	return buf.Bytes(), nil
 }
 

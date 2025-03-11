@@ -39,3 +39,8 @@ tasks:
   mg-drop:
     cmds:
       - migrate -path {{.migrVar}} -database $PGX_DB_PATH drop
+
+  prepush:
+    cmds:
+      - staticcheck ./...
+      - errcheck ./...

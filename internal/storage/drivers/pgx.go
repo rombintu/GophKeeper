@@ -127,9 +127,7 @@ func (d *PgxDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret
 		return err
 	}
 	defer func() {
-		if err := tx.Rollback(ctx); err != nil {
-			slog.Error("failed rollback", slog.String("error", err.Error()))
-		}
+		_ = tx.Rollback(ctx) //nolint:errcheck
 	}()
 
 	sql := `INSERT INTO secrets (

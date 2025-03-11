@@ -22,7 +22,7 @@ func main() {
 
 	// Нужно переделать, чтобы подгружался ключ из базы
 	// Изменить порядок
-	profile := cli.NewProfile("./profiles/private-key.asc")
+	profile := cli.NewProfile("./profiles/test.key")
 	store := storage.NewClientManager(storage.DriverOpts{
 		ServiceName: "client",
 		DriverPath:  profile.GetDriverPath(),

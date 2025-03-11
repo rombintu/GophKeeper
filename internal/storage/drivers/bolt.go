@@ -80,9 +80,7 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 		return err
 	}
 	defer func() {
-		if err := tx.Rollback(); err != nil {
-			slog.Error("failed rollback", slog.String("error", err.Error()))
-		}
+		_ = tx.Rollback() //nolint:errcheck
 	}()
 
 	dataBucket := tx.Bucket([]byte(secretsTable))
@@ -162,7 +160,7 @@ func (bd *BoltDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.
 
 			dataBytes, err := crypto.Decrypt(bd.cryptoKey, dataEnc)
 			if err != nil {
-				slog.Warn("failed decrypt secret. skip...", slog.String("key", string(k)))
+				slog.Warn("failed decrypt secret. skip...", slog.String("key", string(k)), slog.String("error", err.Error()))
 				continue
 			}
 			var data SecretData
