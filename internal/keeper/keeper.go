@@ -37,13 +37,13 @@ func (s *KeeperService) HealthCheck(duration time.Duration) {
 	ticker := time.NewTicker(s.config.HealthCheckDuration)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			// TODO: отправка в API статус сервиса
-			slog.Debug("health check service", slog.String("service", ServiceName))
-			ctx := context.Background()
-			s.store.Ping(ctx, true)
+	for range ticker.C {
+
+		// TODO: отправка в API статус сервиса
+		slog.Debug("health check service", slog.String("service", ServiceName))
+		ctx := context.Background()
+		if err := s.store.Ping(ctx, true); err != nil {
+			slog.Warn("ping failed", slog.String("error", err.Error()))
 		}
 	}
 }

@@ -63,7 +63,7 @@ func (bd *BoltDriver) Ping(ctx context.Context, monitoring bool) error {
 
 // Create tables
 func (bd *BoltDriver) Configure(ctx context.Context) error {
-	bd.driver.Update(func(tx *bolt.Tx) error {
+	return bd.driver.Update(func(tx *bolt.Tx) error {
 		for _, table := range []string{metaTable, secretsTable, profileTable} {
 			_, err := tx.CreateBucketIfNotExists([]byte(table))
 			if err != nil {
@@ -72,7 +72,6 @@ func (bd *BoltDriver) Configure(ctx context.Context) error {
 		}
 		return nil
 	})
-	return nil
 }
 
 func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) error {
@@ -80,7 +79,11 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			slog.Error("failed rollback", slog.String("error", err.Error()))
+		}
+	}()
 
 	dataBucket := tx.Bucket([]byte(secretsTable))
 	metaBucket := tx.Bucket([]byte(metaTable))

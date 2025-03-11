@@ -35,7 +35,9 @@ func main() {
 		DriverPath:  cfg.DriverPath})
 	service := keeper.NewKeeperService(store, cfg)
 
-	service.Configure()
+	if err := service.Configure(); err != nil {
+		panic(err)
+	}
 
 	go service.HealthCheck(cfg.HealthCheckDuration)
 	go func() {
@@ -50,6 +52,8 @@ func main() {
 	// Waiting for SIGINT (pkill -2) or SIGTERM
 	<-stop
 
-	service.Shutdown()
+	if err := service.Shutdown(); err != nil {
+		panic(err)
+	}
 	slog.Info("Service is shutdown", slog.String("service", "keeper"))
 }

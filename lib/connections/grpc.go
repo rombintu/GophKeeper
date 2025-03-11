@@ -2,6 +2,7 @@ package connections
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -46,7 +47,9 @@ func (p *ConnPool) CleanUp() {
 
 	for addr, conn := range p.conns {
 		if !p.checkHealth(conn) {
-			conn.Close()
+			if err := conn.Close(); err != nil {
+				slog.Warn("failed close conn", slog.String("error", err.Error()))
+			}
 			delete(p.conns, addr)
 		}
 	}

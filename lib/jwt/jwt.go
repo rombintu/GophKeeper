@@ -16,6 +16,14 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// Объявляем тип-обёртку для ключа
+type contextKey string
+
+// Определяем конкретный ключ с этим типом
+const (
+	UserClaimsKey contextKey = "userClaims"
+)
+
 // NewToken creates new JWT token for given user
 func NewToken(user *proto.User, secret string, duration time.Duration) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
@@ -130,7 +138,7 @@ func VerifyTokenInterceptor(secret string, excludedMethods []string) grpc.UnaryS
 		}
 
 		// Добавляем claims в контекст для использования в обработчике
-		ctx = context.WithValue(ctx, "userClaims", claims)
+		ctx = context.WithValue(ctx, UserClaimsKey, claims)
 
 		return handler(ctx, req)
 	}

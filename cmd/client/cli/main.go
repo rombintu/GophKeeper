@@ -39,7 +39,9 @@ func main() {
 	}()
 	man.SetStore(store)
 	man.SetProfile(profile)
-	man.Configure()
+	if err := man.Configure(); err != nil {
+		panic(err)
+	}
 	app := cli.NewApp(man)
 
 	if err := app.Cmd.Run(ctx, os.Args); err != nil {

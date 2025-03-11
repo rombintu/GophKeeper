@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
@@ -23,7 +24,11 @@ func LoadPublicKey(filename string) (openpgp.EntityList, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при открытии файла открытого ключа: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			slog.Warn("failed close file", slog.String("error", err.Error()))
+		}
+	}()
 
 	entityList, err := openpgp.ReadArmoredKeyRing(file)
 	if err != nil {
@@ -42,7 +47,12 @@ func LoadPrivateKey(filename string) (openpgp.EntityList, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при открытии файла закрытого ключа: %w", err)
 	}
-	defer file.Close()
+
+	defer func() {
+		if err := file.Close(); err != nil {
+			slog.Warn("failed close file", slog.String("error", err.Error()))
+		}
+	}()
 
 	entityList, err := openpgp.ReadArmoredKeyRing(file)
 	if err != nil {
@@ -71,8 +81,14 @@ func Encrypt(key openpgp.EntityList, message []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при записи данных для шифрования: %w", err)
 	}
-	encryptedWriter.Close()
-	armorWriter.Close()
+	if err := encryptedWriter.Close(); err != nil {
+		slog.Error("failed close writer", slog.String("error", err.Error()))
+		return nil, err
+	}
+	if err := armorWriter.Close(); err != nil {
+		slog.Error("failed close writer", slog.String("error", err.Error()))
+		return nil, err
+	}
 
 	return buf.Bytes(), nil
 }

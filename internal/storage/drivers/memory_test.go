@@ -10,7 +10,9 @@ import (
 func TestMemoryDriver_SecretCreate(t *testing.T) {
 	md := &MemoryDriver{}
 	ctx := context.Background()
-	md.Open(ctx)
+	if err := md.Open(ctx); err != nil {
+		t.Error("failed open memdb", err)
+	}
 	tests := []struct {
 		name     string
 		md       *MemoryDriver
@@ -56,7 +58,9 @@ func TestMemoryDriver_SecretCreate(t *testing.T) {
 func TestMemoryDriver_SecretList(t *testing.T) {
 	md := &MemoryDriver{}
 	ctx := context.Background()
-	md.Open(ctx)
+	if err := md.Open(ctx); err != nil {
+		t.Error("failed open memdb", err)
+	}
 
 	s1 := &kpb.Secret{Title: "test", UserEmail: "1", Version: 0}
 	s2 := &kpb.Secret{Title: "test", UserEmail: "1", Version: 1}
