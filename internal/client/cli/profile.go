@@ -14,24 +14,28 @@ import (
 )
 
 type Profile struct {
-	user   *proto.User
-	Token  string
-	key    openpgp.EntityList
-	dbPath string
+	user     *proto.User
+	Token    string
+	key      openpgp.EntityList
+	dbPath   string
+	confFile string
 }
 
-func NewProfile(keyPath string) *Profile {
-	master, err := crypto.LoadPrivateKey(keyPath)
-	if err != nil {
-		slog.Info("load master key", slog.String("error", err.Error()))
-		os.Exit(0)
+func checkFileExists(pathFile string) {
+	if _, err := os.Stat(pathFile); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			if _, err := os.Create(pathFile); err != nil {
+				slog.Info("failed make file", slog.String("error", err.Error()))
+				os.Exit(0)
+			}
+		} else {
+			slog.Info(err.Error())
+			os.Exit(0)
+		}
 	}
+}
 
-	user, err := crypto.GetProfile(master)
-	if err != nil {
-		slog.Info("load get profile", slog.String("error", err.Error()))
-		os.Exit(0)
-	}
+func NewProfile() *Profile {
 
 	homeDirPath, err := getHomeDir()
 	if err != nil {
@@ -51,21 +55,40 @@ func NewProfile(keyPath string) *Profile {
 			os.Exit(0)
 		}
 	}
+
+	confFile := path.Join(projectDirPath, "config.json")
+	checkFileExists(confFile)
+
 	dbPath := path.Join(projectDirPath, "bolt.db")
-	if _, err := os.Stat(dbPath); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			slog.Warn("database not found... create once", slog.String("path", dbPath))
-		} else {
-			slog.Info("error get stat database", slog.String("error", err.Error()))
-			os.Exit(0)
-		}
-	}
+	checkFileExists(dbPath)
 
 	return &Profile{
-		user:   user,
-		key:    master,
-		dbPath: dbPath,
+		dbPath:   dbPath,
+		confFile: confFile,
 	}
+}
+
+func (p *Profile) GetConfFilePath() string {
+	return p.confFile
+}
+
+func (p *Profile) LoadKey(keyPath string) error {
+	if keyPath == "" {
+		return fmt.Errorf("key-path is not set in file %s", p.confFile)
+	}
+	master, err := crypto.LoadPrivateKey(keyPath)
+	if err != nil {
+		return err
+	}
+
+	user, err := crypto.GetUserFromKey(master)
+	if err != nil {
+		return err
+	}
+
+	p.user = user
+	p.key = master
+	return nil
 }
 
 func (p *Profile) GetKey() openpgp.EntityList {

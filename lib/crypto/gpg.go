@@ -98,7 +98,7 @@ func GetKeyHash(entity *openpgp.Entity) []byte {
 	return entity.PrimaryKey.Fingerprint
 }
 
-func GetProfile(privateKey openpgp.EntityList) (*proto.User, error) {
+func GetUserFromKey(privateKey openpgp.EntityList) (*proto.User, error) {
 	user := &proto.User{}
 	// Проходим по списку ключей и извлекаем profile
 	for _, entity := range privateKey {

@@ -18,10 +18,6 @@ type Config struct {
 	Secret               string
 }
 
-type ClientConfig struct {
-	Address string
-}
-
 func NewConfig() (Config, error) {
 	var cfg Config
 

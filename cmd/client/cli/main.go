@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"os"
 
 	"github.com/rombintu/GophKeeper/internal/client/cli"
+	"github.com/rombintu/GophKeeper/internal/config"
 	"github.com/rombintu/GophKeeper/internal/storage"
 	"github.com/rombintu/GophKeeper/lib/logger"
 )
@@ -14,15 +16,18 @@ func main() {
 	logger.InitLogger("local")
 
 	man := cli.NewManager()
-	// keyPath, err := man.ConfigGet(context.Background(), "key-path")
-	// if err != nil {
-	// 	slog.Warn("failed get key-path. use config set")
-	// 	os.Exit(0)
-	// }
 
-	// Нужно переделать, чтобы подгружался ключ из базы
-	// Изменить порядок
-	profile := cli.NewProfile("./profiles/test.key")
+	profile := cli.NewProfile()
+	conf, err := config.NewClientConfig(profile.GetConfFilePath())
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := conf.Save(profile.GetConfFilePath()); err != nil {
+		log.Fatal(err)
+	}
+	if err := profile.LoadKey(conf.KeyPath); err != nil {
+		log.Fatal(err)
+	}
 	store := storage.NewClientManager(storage.DriverOpts{
 		ServiceName: "client",
 		DriverPath:  profile.GetDriverPath(),
@@ -37,7 +42,19 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
+
+	// TODO нужно учесть ошибки
 	man.SetStore(store)
+	keyPath, err := man.ConfigGet(ctx, "key-path")
+	if err != nil {
+		slog.Warn("failed get key-path. use config set")
+		os.Exit(0)
+	}
+
+	if err := profile.LoadKey(keyPath); err != nil {
+		slog.Warn("failed load key", slog.String("error", err.Error()))
+	}
+
 	man.SetProfile(profile)
 	if err := man.Configure(); err != nil {
 		panic(err)
