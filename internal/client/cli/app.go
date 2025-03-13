@@ -32,9 +32,10 @@ func NewApp(man *Manager) *App {
 							Name:  "set",
 							Usage: "Set global configuration",
 							Flags: []cli.Flag{
-								&cli.StringFlag{
-									Name:  "key-path",
-									Usage: "Path to gpg key",
+								&cli.StringFlag{ // Depricated and useless
+									Name:   "key-path",
+									Usage:  "Path to gpg key",
+									Hidden: true,
 								},
 								&cli.StringFlag{
 									Name:  "auth-address",
@@ -66,6 +67,43 @@ func NewApp(man *Manager) *App {
 					Usage:   "list all secrets",
 					Action: func(ctx context.Context, cmd *cli.Command) error {
 						return man.SecretList(ctx)
+					},
+				},
+				{
+					Name:  "login",
+					Usage: "Login and get token",
+					// Flags: []cli.Flag{
+
+					// },
+					Action: func(ctx context.Context, cmd *cli.Command) error {
+						addr, err := man.ConfigGet(ctx, "auth-address")
+						if err != nil {
+							return err
+						}
+						return man.Login(ctx, addr)
+					},
+				},
+				{
+					Name:    "register",
+					Aliases: []string{"reg"},
+					Usage:   "Register and get token",
+					Action: func(ctx context.Context, cmd *cli.Command) error {
+						addr, err := man.ConfigGet(ctx, "auth-address")
+						if err != nil {
+							return err
+						}
+						return man.Register(ctx, addr)
+					},
+				},
+				{
+					Name:  "sync",
+					Usage: "Pull and Push cloud secrets",
+					Action: func(ctx context.Context, cmd *cli.Command) error {
+						addr, err := man.ConfigGet(ctx, "sync-address")
+						if err != nil {
+							return err
+						}
+						return man.Login(ctx, addr)
 					},
 				},
 				{

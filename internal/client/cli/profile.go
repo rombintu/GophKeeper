@@ -15,7 +15,6 @@ import (
 
 type Profile struct {
 	user     *proto.User
-	Token    string
 	key      openpgp.EntityList
 	dbPath   string
 	confFile string

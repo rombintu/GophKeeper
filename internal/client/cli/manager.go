@@ -5,8 +5,11 @@ import (
 	"log/slog"
 
 	"github.com/rombintu/GophKeeper/internal/client/models"
+	apb "github.com/rombintu/GophKeeper/internal/proto/auth"
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	"github.com/rombintu/GophKeeper/internal/storage"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type Manager struct {
@@ -75,4 +78,38 @@ func (m *Manager) ConfigGet(ctx context.Context, key string) (string, error) {
 		return "", err
 	}
 	return string(data), nil
+}
+
+func (m *Manager) Login(ctx context.Context, authServiceAddr string) error {
+	conn, err := grpc.NewClient(authServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	authClient := apb.NewAuthClient(conn)
+	resp, err := authClient.Login(ctx, &apb.LoginRequest{User: m.profile.user})
+	if err != nil {
+		return err
+	}
+	slog.Debug("saved", slog.String("token", resp.GetToken()))
+	return m.ConfigSet(ctx, map[string]string{
+		"token": resp.GetToken(),
+	})
+}
+
+func (m *Manager) Register(ctx context.Context, authServiceAddr string) error {
+	conn, err := grpc.NewClient(authServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	authClient := apb.NewAuthClient(conn)
+	resp, err := authClient.Register(ctx, &apb.RegisterRequest{User: m.profile.user})
+	if err != nil {
+		return err
+	}
+	slog.Debug("saved", slog.String("token", resp.GetToken()))
+	return m.ConfigSet(ctx, map[string]string{
+		"token": resp.GetToken(),
+	})
 }

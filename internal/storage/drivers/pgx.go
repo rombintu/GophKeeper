@@ -198,5 +198,8 @@ func (d *PgxDriver) autoDefaultMigrate() error {
 }
 
 func (d *PgxDriver) Configure(ctx context.Context) error {
-	return d.autoDefaultMigrate()
+	if err := d.autoDefaultMigrate(); err != nil {
+		slog.Warn("auto migration failed or skip", slog.String("message", err.Error()))
+	}
+	return nil
 }
