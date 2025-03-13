@@ -46,14 +46,13 @@ type SecretManager interface {
 	Driver
 	SecretCreate(ctx context.Context, secret *kpb.Secret) error
 	SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret) error
+	SecretGetBatch(ctx context.Context) ([]*kpb.Secret, error)
 	SecretList(ctx context.Context, userEmail string) ([]*kpb.Secret, error)
 	SecretPurge(ctx context.Context, secret *kpb.Secret) error
 }
 
 type ClientManager interface {
 	SecretManager
-	SyncPush(ctx context.Context, addr string) error
-	SyncPull(ctx context.Context, addr string) error
 	Set(ctx context.Context, key []byte, value []byte) error
 	Get(ctx context.Context, key []byte) ([]byte, error)
 }

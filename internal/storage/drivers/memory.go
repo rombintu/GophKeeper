@@ -98,3 +98,7 @@ func (md *MemoryDriver) Close(ctx context.Context) error {
 func (md *MemoryDriver) Configure(ctx context.Context) error {
 	return nil
 }
+
+func (md *MemoryDriver) SecretGetBatch(ctx context.Context) ([]*kpb.Secret, error) {
+	return nil, nil
+}

@@ -23,6 +23,7 @@ const (
 
 type SecretMeta struct {
 	Title      string
+	UserEmail  string
 	SecretType kpb.Secret_SecretType
 	Version    int64
 	CreatedAt  int64
@@ -80,7 +81,9 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 		return err
 	}
 	defer func() {
-		_ = tx.Rollback() //nolint:errcheck
+		if err := tx.Rollback(); err != nil {
+			slog.Error(err.Error())
+		}
 	}()
 
 	dataBucket := tx.Bucket([]byte(secretsTable))
@@ -88,6 +91,7 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 
 	meta := SecretMeta{
 		Title:      secret.GetTitle(),
+		UserEmail:  secret.GetUserEmail(),
 		SecretType: secret.GetSecretType(),
 		Version:    secret.GetVersion(),
 		CreatedAt:  secret.GetCreatedAt(),
@@ -123,11 +127,6 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 
 	return tx.Commit()
 
-}
-
-// UNUSED FUNCTION
-func (bd *BoltDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret) error {
-	return nil
 }
 
 func (bd *BoltDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.Secret, error) {
@@ -171,7 +170,7 @@ func (bd *BoltDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.
 			secrets = append(secrets, &kpb.Secret{
 				Title:      meta.Title,
 				SecretType: meta.SecretType,
-				UserEmail:  userEmail,
+				UserEmail:  meta.UserEmail,
 				CreatedAt:  meta.CreatedAt,
 				Version:    meta.Version,
 				Payload:    data.Payload,
@@ -214,10 +213,98 @@ func (bd *BoltDriver) Get(ctx context.Context, key []byte) ([]byte, error) {
 	return data, nil
 }
 
-func (bd *BoltDriver) SyncPull(ctx context.Context, addr string) error {
-	return nil
+// Дешифровки не происходит
+func (bd *BoltDriver) SecretGetBatch(ctx context.Context) ([]*kpb.Secret, error) {
+	var secrets []*kpb.Secret
+
+	if bd.cryptoKey == nil {
+		return nil, errors.New("crypto key is not set")
+	}
+	if err := bd.driver.View(func(tx *bolt.Tx) error {
+		dataBucket := tx.Bucket([]byte(secretsTable))
+		metaBucket := tx.Bucket([]byte(metaTable))
+
+		cursor := metaBucket.Cursor()
+		lastKey, _ := cursor.Last()
+
+		for k, v := cursor.Seek(lastKey); k != nil; k, v = cursor.Prev() {
+			// Декодирование метаданных
+			var meta SecretMeta
+			if err := json.Unmarshal(v, &meta); err != nil {
+				return err
+			}
+
+			// Получение данных по тому же ключу
+			dataEnc := dataBucket.Get(k)
+			if dataEnc == nil {
+				return fmt.Errorf("not found secret for key %s", k)
+			}
+
+			secrets = append(secrets, &kpb.Secret{
+				Title:      meta.Title,
+				SecretType: meta.SecretType,
+				UserEmail:  meta.UserEmail,
+				CreatedAt:  meta.CreatedAt,
+				Version:    meta.Version,
+				Payload:    dataEnc,
+			})
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return secrets, nil
 }
 
-func (bd *BoltDriver) SyncPush(ctx context.Context, addr string) error {
-	return nil
+func (bd *BoltDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret) error {
+	tx, err := bd.driver.Begin(true)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			slog.Error(err.Error())
+		}
+	}()
+
+	dataBucket := tx.Bucket([]byte(secretsTable))
+	metaBucket := tx.Bucket([]byte(metaTable))
+
+	for _, s := range secrets {
+
+		meta := SecretMeta{
+			Title:      s.GetTitle(),
+			UserEmail:  s.GetUserEmail(),
+			SecretType: s.GetSecretType(),
+			Version:    s.GetVersion(),
+			CreatedAt:  s.GetCreatedAt(),
+		}
+
+		data := SecretData{
+			Payload: s.GetPayload(),
+		}
+
+		metaBytes, err := json.Marshal(meta)
+		if err != nil {
+			return err
+		}
+		dataBytes, err := json.Marshal(data)
+		if err != nil {
+			return err
+		}
+		hash := crypto.GetHash(dataBytes)
+		uuid := uuid.New().String()
+		key := fmt.Sprintf("%s:::%s:::%s", s.GetUserEmail(), hash, uuid)
+
+		if err := metaBucket.Put([]byte(key), metaBytes); err != nil {
+			return err
+		}
+		if err := dataBucket.Put([]byte(key), dataBytes); err != nil {
+			return err
+		}
+
+	}
+	return tx.Commit()
+
 }

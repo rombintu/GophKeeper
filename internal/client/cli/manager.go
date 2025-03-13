@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"log/slog"
+	"sync"
 
 	"github.com/rombintu/GophKeeper/internal/client/models"
 	apb "github.com/rombintu/GophKeeper/internal/proto/auth"
@@ -80,8 +81,8 @@ func (m *Manager) ConfigGet(ctx context.Context, key string) (string, error) {
 	return string(data), nil
 }
 
-func (m *Manager) Login(ctx context.Context, authServiceAddr string) error {
-	conn, err := grpc.NewClient(authServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func (m *Manager) Login(ctx context.Context, serviceAddr string) error {
+	conn, err := grpc.NewClient(serviceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return err
 	}
@@ -101,8 +102,8 @@ func (m *Manager) Login(ctx context.Context, authServiceAddr string) error {
 	})
 }
 
-func (m *Manager) Register(ctx context.Context, authServiceAddr string) error {
-	conn, err := grpc.NewClient(authServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func (m *Manager) Register(ctx context.Context, serviceAddr string) error {
+	conn, err := grpc.NewClient(serviceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return err
 	}
@@ -120,4 +121,41 @@ func (m *Manager) Register(ctx context.Context, authServiceAddr string) error {
 	return m.ConfigSet(ctx, map[string]string{
 		"token": resp.GetToken(),
 	})
+}
+
+func (m *Manager) Sync(ctx context.Context, serviceAddr string) error {
+	conn, err := grpc.NewClient(serviceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := conn.Close(); err != nil {
+			slog.Error("failed close connection", slog.String("error", err.Error()))
+		}
+	}()
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		// TODO
+		// var secrets []*kpb.Secret
+		_, err := m.store.SecretGetBatch(ctx)
+		if err != nil {
+			slog.Error("failed push secrets", slog.String("error", err.Error()))
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		// TODO get secrets
+		var secrets []*kpb.Secret
+		err := m.store.SecretCreateBatch(ctx, secrets)
+		if err != nil {
+			slog.Error("failed push secrets", slog.String("error", err.Error()))
+		}
+	}()
+	wg.Wait()
+	slog.Debug("sync", slog.String("status", "OK"))
+	return nil
 }

@@ -203,3 +203,7 @@ func (d *PgxDriver) Configure(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (d *PgxDriver) SecretGetBatch(ctx context.Context) ([]*kpb.Secret, error) {
+	return nil, nil
+}

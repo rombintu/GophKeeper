@@ -103,7 +103,7 @@ func NewApp(man *Manager) *App {
 						if err != nil {
 							return err
 						}
-						return man.Login(ctx, addr)
+						return man.Sync(ctx, addr)
 					},
 				},
 				{
