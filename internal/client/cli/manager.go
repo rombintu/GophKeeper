@@ -85,7 +85,11 @@ func (m *Manager) Login(ctx context.Context, authServiceAddr string) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			slog.Error("failed close connection", slog.String("error", err.Error()))
+		}
+	}()
 	authClient := apb.NewAuthClient(conn)
 	resp, err := authClient.Login(ctx, &apb.LoginRequest{User: m.profile.user})
 	if err != nil {
@@ -102,7 +106,11 @@ func (m *Manager) Register(ctx context.Context, authServiceAddr string) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			slog.Error("failed close connection", slog.String("error", err.Error()))
+		}
+	}()
 	authClient := apb.NewAuthClient(conn)
 	resp, err := authClient.Register(ctx, &apb.RegisterRequest{User: m.profile.user})
 	if err != nil {
