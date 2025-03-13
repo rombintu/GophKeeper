@@ -48,10 +48,10 @@ func (m *Manager) SecretList(ctx context.Context) error {
 
 func (m *Manager) SecretCreate(ctx context.Context, secret models.SecretAdapter) error {
 	newSecret := &kpb.Secret{
-		Title:      secret.Title(),
-		SecretType: secret.Type(),
+		Title:      secret.GetTitle(),
+		SecretType: secret.GetType(),
 		UserEmail:  m.profile.user.GetEmail(),
-		Payload:    secret.Encode(),
+		Payload:    secret.Payload(),
 	}
 	if err := m.store.SecretCreate(ctx, newSecret); err != nil {
 		return err

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/rombintu/GophKeeper/internal/client/models"
@@ -73,9 +74,15 @@ func NewApp(man *Manager) *App {
 					Usage:   "Create new secret",
 					Flags: []cli.Flag{
 						&cli.StringFlag{
-							Name:  "type",
-							Value: "text",
-							Usage: "Type of secret",
+							Name:     "title",
+							Usage:    "Title of secret",
+							Required: true,
+						},
+						&cli.StringFlag{
+							Name:     "type",
+							Value:    "",
+							Usage:    "Type of secret",
+							Required: true,
 							Validator: func(s string) error {
 								var validValues []string
 								for _, name := range kpb.Secret_SecretType_name {
@@ -89,18 +96,90 @@ func NewApp(man *Manager) *App {
 									strings.ToLower(strings.Join(validValues, ",")))
 							},
 						},
+						&cli.StringFlag{
+							Name:  "data",
+							Usage: "Data of secret",
+						},
+						&cli.StringFlag{
+							Name:  "url",
+							Usage: "URL for new secret",
+						},
+						&cli.StringFlag{
+							Name:  "login",
+							Usage: "Your login",
+						},
+						&cli.StringFlag{
+							Name:  "password",
+							Usage: "Your password",
+						},
+						&cli.StringFlag{
+							Name:  "owner",
+							Usage: "Owner lastname of card",
+						},
+						&cli.StringFlag{
+							Name:  "number",
+							Usage: "Number of card",
+						},
+						&cli.StringFlag{
+							Name:  "code",
+							Usage: "code of card",
+							Validator: func(s string) error {
+								_, err := strconv.Atoi(s)
+								if err != nil {
+									return err
+								}
+								if len(s) < 3 || len(s) > 3 {
+									return errors.New("code is a three digit number")
+								}
+								return nil
+							},
+						},
+						&cli.StringFlag{
+							Name:  "expire",
+							Usage: "Expire date",
+						},
 					},
 					Action: func(ctx context.Context, cmd *cli.Command) error {
-						if cmd.NArg() < 1 {
-							return errors.New("too low arguments")
+
+						secret := models.Secret{
+							Title: cmd.String("title"),
 						}
 						switch cmd.String("type") {
 						case strings.ToLower(kpb.Secret_TEXT.String()):
 							st := &models.SecretText{
-								Text: strings.Join(cmd.Args().Slice(), " "),
+								Secret: secret,
+								Text:   cmd.String("data"),
+							}
+							return man.SecretCreate(ctx, st)
+						case strings.ToLower(kpb.Secret_CRED.String()):
+							st := &models.SecretCreds{
+								Secret: secret,
+								Creds: models.Creds{
+									URL:      cmd.String("url"),
+									Login:    cmd.String("login"),
+									Password: cmd.String("password"),
+								},
+							}
+							return man.SecretCreate(ctx, st)
+						case strings.ToLower(kpb.Secret_DATA.String()):
+							st := &models.SecretBinary{
+								Secret:     secret,
+								BinaryData: []byte(cmd.String("data")),
+							}
+							return man.SecretCreate(ctx, st)
+						case strings.ToLower(kpb.Secret_CARD.String()):
+							st := &models.SecretCard{
+								Secret: secret,
+								Card: models.Card{
+									Owner:      cmd.String("owner"),
+									ExpireDate: cmd.String("expire"),
+									Number:     cmd.String("number"),
+									Code:       cmd.String("code"),
+								},
 							}
 							return man.SecretCreate(ctx, st)
 						}
+
 						return man.SecretList(ctx)
 					},
 				},
