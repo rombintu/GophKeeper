@@ -1,0 +1,14 @@
+.env
+cmd/api/api
+cmd/auth/auth
+cmd/storage/storage
+cmd/sync/sync
+
+.vscode
+*.json
+
+profiles/*
+!profiles/.gitkeep
+
+*.db
+*.bolt

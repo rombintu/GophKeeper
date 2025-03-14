@@ -1,0 +1,46 @@
+version: '3'
+
+vars:
+  migrVar: internal/storage/migrations
+
+tasks:
+  build-auth:
+    cmds:
+      - |
+        BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+        COMMIT=$(git rev-parse HEAD)
+        COUNT_COMMIT=$(git rev-list --count HEAD)
+        DATE=$(date +"%Y-%m-%d_%H:%M:%S")
+        go build -ldflags "-X main.buildVersion=v0.${BRANCH_NAME}.${COUNT_COMMIT} -X main.buildDate=${DATE} -X main.buildCommit=${COMMIT}" -o cmd/auth/auth cmd/auth/main.go
+  mockgen:
+    cmds:
+      - mockgen -destination=internal/mocks/storage/mock_driver.go -package=mocks github.com/rombintu/GophKeeper/internal/storage Driver
+      # - mockgen -destination=internal/mocks/storage/mock_grpc.go -package=mocks github.com/rombintu/GophKeeper/internal/proto AuthClient
+  protogen:
+    cmds:
+      - |
+        protoc --go_out=. --go_opt=paths=source_relative \
+        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+        internal/proto/auth/auth.proto
+      - |
+        protoc --go_out=. --go_opt=paths=source_relative \
+        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+        internal/proto/keeper/keeper.proto
+
+  mg-up:
+    cmds:
+      - migrate -path {{.migrVar}} -database $PGX_DB_PATH up
+  mg-up-1:
+    cmds:
+      - migrate -path {{.migrVar}} -database $PGX_DB_PATH up 1
+  mg-down-1:
+    cmds:
+      - migrate -path {{.migrVar}} -database $PGX_DB_PATH down 1
+  mg-drop:
+    cmds:
+      - migrate -path {{.migrVar}} -database $PGX_DB_PATH drop
+
+  prepush:
+    cmds:
+      - staticcheck ./...
+      - errcheck ./...

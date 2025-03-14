@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package proto;
+import "google/protobuf/empty.proto";
+
+message Secret {
+    string title = 1;
+    enum SecretType {
+        TEXT = 0;
+        CRED = 1;
+        DATA = 2;
+        CARD = 3;
+    }
+    SecretType secret_type = 2;
+    string user_email = 3;
+    int64 created_at = 4;
+    int64 version = 5;
+    bytes payload = 6; // JSON binary data or empty
+}
+
+message FetchRequest {
+    string user_email = 1;
+    int64 version = 2;
+}
+
+message FetchResponse {
+    repeated Secret secrets = 1;
+}
+
+message CreateRequest {
+    string user_email = 1;
+    Secret secret = 2;
+}
+
+message CreateBatchRequest {
+    string user_email = 1;
+    repeated Secret secrets = 2;
+}
+
+message DeleteRequest {
+    string user_email = 1;
+    Secret secret = 2;
+}
+
+service Keeper {
+    rpc Fetch(FetchRequest) returns (FetchResponse);
+    rpc Create(CreateRequest) returns (google.protobuf.Empty);
+    rpc CreateMany(CreateBatchRequest) returns (google.protobuf.Empty);
+    rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
+}

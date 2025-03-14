@@ -1,0 +1,7 @@
+BEGIN;
+
+DROP TABLE secrets;
+DROP TABLE users;
+DROP TABLE services;
+
+COMMIT;
