@@ -4,7 +4,7 @@
 // - protoc             v5.29.3
 // source: internal/proto/sync/sync.proto
 
-package keeper
+package sync
 
 import (
 	context "context"

@@ -1,9 +1,9 @@
 syntax = "proto3";
 
 package proto;
-option go_package = "github.com/rombintu/GophKeeper/internal/proto/keeper";
+option go_package = "github.com/rombintu/GophKeeper/internal/proto/sync";
 
-message Secret {
+message SyncSecret {
     string title = 1;
     enum SecretType {
         TEXT = 0;
@@ -19,12 +19,12 @@ message Secret {
 }
 
 message SyncRequest {
-    repeated Secret secrets = 1;
+    repeated SyncSecret secrets = 1;
 }
 
 message SyncResponse {
     bool success = 1;
-    repeated Secret secrets = 2;
+    repeated SyncSecret secrets = 2;
 }
 
 service Sync {
