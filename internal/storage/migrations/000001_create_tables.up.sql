@@ -15,6 +15,7 @@ CREATE TABLE secrets (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     version NUMERIC(10,2) DEFAULT 0,
     payload BYTEA,
+    hash_payload BYTEA,
     FOREIGN KEY (user_email) REFERENCES users(email)
 );
 

@@ -15,7 +15,8 @@ message Secret {
     string user_email = 3;
     int64 created_at = 4;
     int64 version = 5;
-    bytes payload = 6; // JSON binary data or empty
+    bytes hash_payload = 6;
+    bytes payload = 7; // JSON binary data or empty
 }
 
 message FetchRequest {

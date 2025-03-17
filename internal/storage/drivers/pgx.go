@@ -109,8 +109,8 @@ func (d *PgxDriver) UserCreate(ctx context.Context, user *apb.User) error {
 // Переделать все под ID для надежности
 func (d *PgxDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) error {
 	sql := `INSERT INTO secrets (
-		title, secret_type, user_email, version, payload
-		) VALUES ($1, $2, $3, $4, $5)`
+		title, secret_type, user_email, version, hash_payload, payload
+		) VALUES ($1, $2, $3, $4, $5, $6)`
 	if _, err := d.exec(ctx, sql,
 		secret.GetTitle(), secret.GetSecretType(),
 		secret.GetUserEmail(), secret.GetVersion(),
@@ -131,15 +131,15 @@ func (d *PgxDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret
 	}()
 
 	sql := `INSERT INTO secrets (
-		title, secret_type, user_email, version, payload
-		) VALUES ($1, $2, $3, $4, $5)`
+		title, secret_type, user_email, version, hash_payload, payload
+		) VALUES ($1, $2, $3, $4, $5, $6)`
 
 	var errs []error
 	for _, s := range secrets {
 		if _, err := d.exec(ctx, sql,
 			s.GetTitle(), s.GetSecretType(),
 			s.GetUserEmail(), s.GetVersion(),
-			s.GetPayload(),
+			s.GetHashPayload(), s.GetPayload(),
 		); err != nil {
 			errs = append(errs, err)
 		}
@@ -148,7 +148,7 @@ func (d *PgxDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret
 }
 
 func (d *PgxDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.Secret, error) {
-	sql := `SELECT title, secret_type, user_email, created_at, version, payload 
+	sql := `SELECT title, secret_type, user_email, created_at, version, hash_payload, payload 
 		FROM secrets WHERE user_email=$1`
 	rows, err := d.queryRows(ctx, sql, userEmail)
 	if err != nil {
@@ -160,7 +160,7 @@ func (d *PgxDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.Se
 	for rows.Next() {
 		var s kpb.Secret
 		if err := rows.Scan(
-			&s.Title, &s.SecretType, &s.UserEmail, &s.CreatedAt, &s.Version, &s.Payload,
+			&s.Title, &s.SecretType, &s.UserEmail, &s.CreatedAt, &s.Version, &s.HashPayload, &s.Payload,
 		); err != nil {
 			return nil, err
 		}

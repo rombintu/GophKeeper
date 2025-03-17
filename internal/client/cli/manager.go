@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"log/slog"
-	"sync"
 
 	"github.com/rombintu/GophKeeper/internal/client/models"
 	apb "github.com/rombintu/GophKeeper/internal/proto/auth"
@@ -142,29 +141,24 @@ func (m *Manager) Sync(ctx context.Context, serviceAddr string) error {
 			slog.Error("failed close connection", slog.String("error", err.Error()))
 		}
 	}()
-	var wg sync.WaitGroup
-	wg.Add(2)
 
-	go func() {
-		defer wg.Done()
-		// TODO
-		// var secrets []*kpb.Secret
-		_, err := m.store.SecretGetBatch(ctx)
-		if err != nil {
-			slog.Error("failed push secrets", slog.String("error", err.Error()))
-		}
-	}()
+	secretsForSync, err := m.store.SecretGetBatch(ctx)
+	if err != nil {
+		slog.Error("failed push secrets", slog.String("error", err.Error()))
+		return err
+	}
 
-	go func() {
-		defer wg.Done()
-		// TODO get secrets
-		var secrets []*kpb.Secret
-		err := m.store.SecretCreateBatch(ctx, secrets)
-		if err != nil {
-			slog.Error("failed push secrets", slog.String("error", err.Error()))
-		}
-	}()
-	wg.Wait()
+	syncClient := apb.NewAuthClient(conn)
+	resp, err := syncClient.Sync(ctx, &spb.SyncRequest{User: m.profile.user, Secrets: secretsForSync})
+	if err != nil {
+		return err
+	}
+
+	if err := m.store.SecretCreateBatch(ctx, resp.Secrets); err != nil {
+		slog.Error("failed pull secrets", slog.String("error", err.Error()))
+		return err
+	}
+
 	slog.Debug("sync", slog.String("status", "OK"))
 	return nil
 }

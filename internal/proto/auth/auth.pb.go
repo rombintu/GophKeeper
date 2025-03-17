@@ -26,7 +26,7 @@ type User struct {
 	unknownFields protoimpl.UnknownFields
 
 	Email       string `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	KeyChecksum []byte `protobuf:"bytes,2,opt,nkey_checksumchecksum,json=keyChecksum,prkey_checksumon:"key_checksum,omitempty"` // Для UserGet - пустое
+	KeyChecksum []byte `protobuf:"bytes,2,opt,name=key_checksum,json=keyChecksum,proto3" json:"key_checksum,omitempty"` // Для UserGet - пустое
 }
 
 func (x *User) Reset() {
