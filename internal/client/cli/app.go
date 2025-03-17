@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -32,11 +33,6 @@ func NewApp(man *Manager) *App {
 							Name:  "set",
 							Usage: "Set global configuration",
 							Flags: []cli.Flag{
-								&cli.StringFlag{ // Depricated and useless
-									Name:   "key-path",
-									Usage:  "Path to gpg key",
-									Hidden: true,
-								},
 								&cli.StringFlag{
 									Name:  "auth-address",
 									Usage: "Address to Auth service",
@@ -50,13 +46,34 @@ func NewApp(man *Manager) *App {
 								// Собираем все значения флагов в map
 								configValues := make(map[string]string)
 
-								for _, k := range []string{"key-path", "auth-address", "sync-address"} {
+								for _, k := range []string{"auth-address", "sync-address"} {
 									if cmd.IsSet(k) {
 										configValues[k] = cmd.String(k)
 									}
 								}
 								// Передаем значения в общую функцию
 								return man.ConfigSet(ctx, configValues)
+							},
+						},
+						{
+							Name:  "get",
+							Usage: "Get global configuration",
+
+							Action: func(ctx context.Context, cmd *cli.Command) error {
+								// Передаем значения в общую функцию
+								data, err := man.ConfigGetMap(ctx)
+								if err != nil {
+									return err
+								}
+
+								if len(data) == 0 {
+									slog.Info("config is empty")
+									return nil
+								}
+								for k, v := range data {
+									fmt.Println(k, "-->", v)
+								}
+								return nil
 							},
 						},
 					},
