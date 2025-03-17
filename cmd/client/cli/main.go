@@ -43,22 +43,16 @@ func main() {
 		}
 	}()
 
-	// TODO нужно учесть ошибки
 	man.SetStore(store)
-	keyPath, err := man.ConfigGet(ctx, "key-path")
-	if err != nil {
-		slog.Warn("failed get key-path. use config set")
-		os.Exit(0)
+	if err := man.Configure(); err != nil {
+		panic(err)
 	}
 
-	if err := profile.LoadKey(keyPath); err != nil {
+	if err := profile.LoadKey(conf.KeyPath); err != nil {
 		slog.Warn("failed load key", slog.String("error", err.Error()))
 	}
 
 	man.SetProfile(profile)
-	if err := man.Configure(); err != nil {
-		panic(err)
-	}
 	app := cli.NewApp(man)
 
 	if err := app.Cmd.Run(ctx, os.Args); err != nil {

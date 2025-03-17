@@ -213,6 +213,21 @@ func (bd *BoltDriver) Get(ctx context.Context, key []byte) ([]byte, error) {
 	return data, nil
 }
 
+func (bd *BoltDriver) GetMap(ctx context.Context) (map[string]string, error) {
+	data := make(map[string]string)
+	if err := bd.driver.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(profileTable))
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			data[string(k)] = string(v)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 // Дешифровки не происходит
 func (bd *BoltDriver) SecretGetBatch(ctx context.Context) ([]*kpb.Secret, error) {
 	var secrets []*kpb.Secret

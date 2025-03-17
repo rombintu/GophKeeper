@@ -55,6 +55,7 @@ type ClientManager interface {
 	SecretManager
 	Set(ctx context.Context, key []byte, value []byte) error
 	Get(ctx context.Context, key []byte) ([]byte, error)
+	GetMap(ctx context.Context) (map[string]string, error)
 }
 
 type DriverOpts struct {
