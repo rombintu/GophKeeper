@@ -1,17 +1,18 @@
 syntax = "proto3";
 
-package proto;
+package proto.sync;
+option go_package = "github.com/rombintu/GophKeeper/internal/proto/sync";
 import "internal/proto/keeper/keeper.proto";
 
 message SyncRequest {
-    repeated Secret secrets = 1;
+    repeated proto.keeper.Secret secrets = 1;
 }
 
 message SyncResponse {
     bool success = 1;
-    repeated Secret secrets = 2;
+    repeated proto.keeper.Secret secrets = 2;
 }
 
 service Sync {
-    rpc Sync(SyncRequest) returns (SyncResponse);
+    rpc Proccess(SyncRequest) returns (SyncResponse);
 }
