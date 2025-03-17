@@ -39,6 +39,10 @@ func (m *Manager) SecretList(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if len(secrets) == 0 {
+		slog.Info("secret list is empty")
+		return nil
+	}
 	for _, s := range secrets {
 		slog.Info("secret",
 			slog.String("title", s.GetTitle()),
@@ -79,6 +83,11 @@ func (m *Manager) ConfigGet(ctx context.Context, key string) (string, error) {
 		return "", err
 	}
 	return string(data), nil
+}
+
+func (m *Manager) ConfigGetMap(ctx context.Context) (map[string]string, error) {
+	return m.store.GetMap(ctx)
+
 }
 
 func (m *Manager) Login(ctx context.Context, serviceAddr string) error {
