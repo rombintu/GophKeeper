@@ -1,33 +1,17 @@
 syntax = "proto3";
 
 package proto;
-option go_package = "github.com/rombintu/GophKeeper/internal/proto/sync";
-
-message SyncSecret {
-    string title = 1;
-    enum SecretType {
-        TEXT = 0;
-        CRED = 1;
-        DATA = 2;
-        CARD = 3;
-    }
-    SecretType secret_type = 2;
-    string user_email = 3;
-    int64 created_at = 4;
-    int64 version = 5;
-    bytes payload = 6; // JSON binary data or empty
-}
+import "internal/proto/keeper/keeper.proto";
 
 message SyncRequest {
-    repeated SyncSecret secrets = 1;
+    repeated Secret secrets = 1;
 }
 
 message SyncResponse {
     bool success = 1;
-    repeated SyncSecret secrets = 2;
+    repeated Secret secrets = 2;
 }
 
 service Sync {
-    rpc SyncPull(SyncRequest) returns (SyncResponse);
-    rpc SyncPush(SyncRequest) returns (SyncResponse);
+    rpc Sync(SyncRequest) returns (SyncResponse);
 }
