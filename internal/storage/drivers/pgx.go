@@ -110,7 +110,8 @@ func (d *PgxDriver) UserCreate(ctx context.Context, user *apb.User) error {
 func (d *PgxDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) error {
 	sql := `INSERT INTO secrets (
 		title, secret_type, user_email, version, hash_payload, payload
-		) VALUES ($1, $2, $3, $4, $5, $6)`
+		) VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (title) DO UPDATE SET version=version+1`
 	if _, err := d.exec(ctx, sql,
 		secret.GetTitle(), secret.GetSecretType(),
 		secret.GetUserEmail(), secret.GetVersion(),
@@ -132,7 +133,8 @@ func (d *PgxDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret
 
 	sql := `INSERT INTO secrets (
 		title, secret_type, user_email, version, hash_payload, payload
-		) VALUES ($1, $2, $3, $4, $5, $6)`
+		) VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (title) DO UPDATE SET version=version+1`
 
 	var errs []error
 	for _, s := range secrets {

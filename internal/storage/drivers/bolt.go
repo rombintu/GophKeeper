@@ -81,14 +81,18 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err := tx.Rollback(); err != nil {
-			slog.Error(err.Error())
-		}
-	}()
+	defer tx.Rollback()
 
 	dataBucket := tx.Bucket([]byte(secretsTable))
 	metaBucket := tx.Bucket([]byte(metaTable))
+
+	// TODO найти секрет, если есть то Version + 1
+	// prefix := []byte(fmt.Sprintf("%s:::%s:::%s", secret.GetUserEmail(), secret.GetHashPayload()))
+	// cursor := metaBucket.Cursor()
+	// for k, v := cursor.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = cursor.Next() {
+
+	// }
+	metaBucket.Get([]byte(""))
 
 	meta := SecretMeta{
 		Title:       secret.GetTitle(),
@@ -121,14 +125,18 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 	}
 
 	if err := metaBucket.Put([]byte(key), metaBytes); err != nil {
+		slog.Error(err.Error(), slog.String("message", "failed put meta"))
 		return err
 	}
 	if err := dataBucket.Put([]byte(key), dataBytesEncrypt); err != nil {
+		slog.Error(err.Error(), slog.String("message", "failed put data"))
 		return err
 	}
-
-	return tx.Commit()
-
+	if err := tx.Commit(); err != nil {
+		slog.Error(err.Error(), slog.String("message", "failed commit"))
+		return err
+	}
+	return nil
 }
 
 func (bd *BoltDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.Secret, error) {

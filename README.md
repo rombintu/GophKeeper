@@ -21,3 +21,6 @@ gophkeeper config set --key-path ./profiles/private-key.asc # Конфигура
 # Установите прочие ключи
 gophkeeper config set --help
 ```
+
+### Схема алгоритма работы SYNC Сервиса
+![alt text](img/schema_sync.png "schema sync")

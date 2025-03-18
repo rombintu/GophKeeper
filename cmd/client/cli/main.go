@@ -45,7 +45,7 @@ func main() {
 
 	man.SetStore(store)
 	if err := man.Configure(); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	if err := profile.LoadKey(conf.KeyPath); err != nil {
