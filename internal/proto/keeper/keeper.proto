@@ -16,7 +16,7 @@ message Secret {
     string user_email = 3;
     int64 created_at = 4;
     int64 version = 5;
-    bytes hash_payload = 6;
+    string hash_payload = 6;
     bytes payload = 7; // JSON binary data or empty
 }
 

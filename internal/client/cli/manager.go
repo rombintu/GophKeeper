@@ -9,6 +9,7 @@ import (
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	spb "github.com/rombintu/GophKeeper/internal/proto/sync"
 	"github.com/rombintu/GophKeeper/internal/storage"
+	"github.com/rombintu/GophKeeper/lib/crypto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -55,11 +56,13 @@ func (m *Manager) SecretList(ctx context.Context) error {
 }
 
 func (m *Manager) SecretCreate(ctx context.Context, secret models.SecretAdapter) error {
+	payload := secret.Payload()
 	newSecret := &kpb.Secret{
-		Title:      secret.GetTitle(),
-		SecretType: secret.GetType(),
-		UserEmail:  m.profile.user.GetEmail(),
-		Payload:    secret.Payload(),
+		Title:       secret.GetTitle(),
+		SecretType:  secret.GetType(),
+		UserEmail:   m.profile.user.GetEmail(),
+		HashPayload: crypto.GetHash(payload),
+		Payload:     payload,
 	}
 	if err := m.store.SecretCreate(ctx, newSecret); err != nil {
 		return err

@@ -27,7 +27,7 @@ type SecretMeta struct {
 	SecretType  kpb.Secret_SecretType
 	Version     int64
 	CreatedAt   int64
-	HashPayload []byte
+	HashPayload string
 }
 
 type SecretData struct {
@@ -111,9 +111,9 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 	if err != nil {
 		return err
 	}
-	hash := crypto.GetHash(dataBytes)
+
 	uuid := uuid.New().String()
-	key := fmt.Sprintf("%s:::%s:::%s", secret.GetUserEmail(), hash, uuid)
+	key := fmt.Sprintf("%s:::%s:::%s", secret.GetUserEmail(), secret.GetHashPayload(), uuid)
 
 	dataBytesEncrypt, err := crypto.Encrypt(bd.cryptoKey, dataBytes)
 	if err != nil {
@@ -293,11 +293,12 @@ func (bd *BoltDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secr
 	for _, s := range secrets {
 
 		meta := SecretMeta{
-			Title:      s.GetTitle(),
-			UserEmail:  s.GetUserEmail(),
-			SecretType: s.GetSecretType(),
-			Version:    s.GetVersion(),
-			CreatedAt:  s.GetCreatedAt(),
+			Title:       s.GetTitle(),
+			UserEmail:   s.GetUserEmail(),
+			SecretType:  s.GetSecretType(),
+			Version:     s.GetVersion(),
+			CreatedAt:   s.GetCreatedAt(),
+			HashPayload: s.GetHashPayload(),
 		}
 
 		data := SecretData{
@@ -312,9 +313,9 @@ func (bd *BoltDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secr
 		if err != nil {
 			return err
 		}
-		hash := crypto.GetHash(dataBytes)
+
 		uuid := uuid.New().String()
-		key := fmt.Sprintf("%s:::%s:::%s", s.GetUserEmail(), hash, uuid)
+		key := fmt.Sprintf("%s:::%s:::%s", s.GetUserEmail(), s.GetHashPayload(), uuid)
 
 		if err := metaBucket.Put([]byte(key), metaBytes); err != nil {
 			return err
