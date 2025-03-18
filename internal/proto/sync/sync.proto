@@ -5,12 +5,14 @@ option go_package = "github.com/rombintu/GophKeeper/internal/proto/sync";
 import "internal/proto/keeper/keeper.proto";
 
 message SyncRequest {
-    repeated proto.keeper.Secret secrets = 1;
+    string email = 1;
+    repeated proto.keeper.Secret secrets = 2;
 }
 
 message SyncResponse {
-    bool success = 1;
+    string email = 1;
     repeated proto.keeper.Secret secrets = 2;
+    bool success = 3;
 }
 
 service Sync {
