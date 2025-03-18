@@ -22,11 +22,12 @@ const (
 )
 
 type SecretMeta struct {
-	Title      string
-	UserEmail  string
-	SecretType kpb.Secret_SecretType
-	Version    int64
-	CreatedAt  int64
+	Title       string
+	UserEmail   string
+	SecretType  kpb.Secret_SecretType
+	Version     int64
+	CreatedAt   int64
+	HashPayload []byte
 }
 
 type SecretData struct {
@@ -90,11 +91,12 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 	metaBucket := tx.Bucket([]byte(metaTable))
 
 	meta := SecretMeta{
-		Title:      secret.GetTitle(),
-		UserEmail:  secret.GetUserEmail(),
-		SecretType: secret.GetSecretType(),
-		Version:    secret.GetVersion(),
-		CreatedAt:  secret.GetCreatedAt(),
+		Title:       secret.GetTitle(),
+		UserEmail:   secret.GetUserEmail(),
+		SecretType:  secret.GetSecretType(),
+		Version:     secret.GetVersion(),
+		CreatedAt:   secret.GetCreatedAt(),
+		HashPayload: secret.GetHashPayload(),
 	}
 
 	data := SecretData{
@@ -168,12 +170,13 @@ func (bd *BoltDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.
 			}
 
 			secrets = append(secrets, &kpb.Secret{
-				Title:      meta.Title,
-				SecretType: meta.SecretType,
-				UserEmail:  meta.UserEmail,
-				CreatedAt:  meta.CreatedAt,
-				Version:    meta.Version,
-				Payload:    data.Payload,
+				Title:       meta.Title,
+				SecretType:  meta.SecretType,
+				UserEmail:   meta.UserEmail,
+				CreatedAt:   meta.CreatedAt,
+				Version:     meta.Version,
+				HashPayload: meta.HashPayload,
+				Payload:     data.Payload,
 			})
 		}
 
@@ -256,12 +259,13 @@ func (bd *BoltDriver) SecretGetBatch(ctx context.Context) ([]*kpb.Secret, error)
 			}
 
 			secrets = append(secrets, &kpb.Secret{
-				Title:      meta.Title,
-				SecretType: meta.SecretType,
-				UserEmail:  meta.UserEmail,
-				CreatedAt:  meta.CreatedAt,
-				Version:    meta.Version,
-				Payload:    dataEnc,
+				Title:       meta.Title,
+				SecretType:  meta.SecretType,
+				UserEmail:   meta.UserEmail,
+				CreatedAt:   meta.CreatedAt,
+				Version:     meta.Version,
+				HashPayload: meta.HashPayload,
+				Payload:     dataEnc,
 			})
 		}
 
