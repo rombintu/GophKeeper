@@ -4,7 +4,7 @@
 // 	protoc        v3.14.0
 // source: internal/proto/keeper/keeper.proto
 
-package proto
+package keeper
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -519,29 +519,29 @@ func file_internal_proto_keeper_keeper_proto_rawDescGZIP() []byte {
 var file_internal_proto_keeper_keeper_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_internal_proto_keeper_keeper_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_internal_proto_keeper_keeper_proto_goTypes = []interface{}{
-	(Secret_SecretType)(0),     // 0: proto.Secret.SecretType
-	(*Secret)(nil),             // 1: proto.Secret
-	(*FetchRequest)(nil),       // 2: proto.FetchRequest
-	(*FetchResponse)(nil),      // 3: proto.FetchResponse
-	(*CreateRequest)(nil),      // 4: proto.CreateRequest
-	(*CreateBatchRequest)(nil), // 5: proto.CreateBatchRequest
-	(*DeleteRequest)(nil),      // 6: proto.DeleteRequest
+	(Secret_SecretType)(0),     // 0: proto.keeper.Secret.SecretType
+	(*Secret)(nil),             // 1: proto.keeper.Secret
+	(*FetchRequest)(nil),       // 2: proto.keeper.FetchRequest
+	(*FetchResponse)(nil),      // 3: proto.keeper.FetchResponse
+	(*CreateRequest)(nil),      // 4: proto.keeper.CreateRequest
+	(*CreateBatchRequest)(nil), // 5: proto.keeper.CreateBatchRequest
+	(*DeleteRequest)(nil),      // 6: proto.keeper.DeleteRequest
 	(*emptypb.Empty)(nil),      // 7: google.protobuf.Empty
 }
 var file_internal_proto_keeper_keeper_proto_depIdxs = []int32{
-	0, // 0: proto.Secret.secret_type:type_name -> proto.Secret.SecretType
-	1, // 1: proto.FetchResponse.secrets:type_name -> proto.Secret
-	1, // 2: proto.CreateRequest.secret:type_name -> proto.Secret
-	1, // 3: proto.CreateBatchRequest.secrets:type_name -> proto.Secret
-	1, // 4: proto.DeleteRequest.secret:type_name -> proto.Secret
-	2, // 5: proto.Keeper.Fetch:input_type -> proto.FetchRequest
-	4, // 6: proto.Keeper.Create:input_type -> proto.CreateRequest
-	5, // 7: proto.Keeper.CreateMany:input_type -> proto.CreateBatchRequest
-	6, // 8: proto.Keeper.Delete:input_type -> proto.DeleteRequest
-	3, // 9: proto.Keeper.Fetch:output_type -> proto.FetchResponse
-	7, // 10: proto.Keeper.Create:output_type -> google.protobuf.Empty
-	7, // 11: proto.Keeper.CreateMany:output_type -> google.protobuf.Empty
-	7, // 12: proto.Keeper.Delete:output_type -> google.protobuf.Empty
+	0, // 0: proto.keeper.Secret.secret_type:type_name -> proto.keeper.Secret.SecretType
+	1, // 1: proto.keeper.FetchResponse.secrets:type_name -> proto.keeper.Secret
+	1, // 2: proto.keeper.CreateRequest.secret:type_name -> proto.keeper.Secret
+	1, // 3: proto.keeper.CreateBatchRequest.secrets:type_name -> proto.keeper.Secret
+	1, // 4: proto.keeper.DeleteRequest.secret:type_name -> proto.keeper.Secret
+	2, // 5: proto.keeper.Keeper.Fetch:input_type -> proto.keeper.FetchRequest
+	4, // 6: proto.keeper.Keeper.Create:input_type -> proto.keeper.CreateRequest
+	5, // 7: proto.keeper.Keeper.CreateMany:input_type -> proto.keeper.CreateBatchRequest
+	6, // 8: proto.keeper.Keeper.Delete:input_type -> proto.keeper.DeleteRequest
+	3, // 9: proto.keeper.Keeper.Fetch:output_type -> proto.keeper.FetchResponse
+	7, // 10: proto.keeper.Keeper.Create:output_type -> google.protobuf.Empty
+	7, // 11: proto.keeper.Keeper.CreateMany:output_type -> google.protobuf.Empty
+	7, // 12: proto.keeper.Keeper.Delete:output_type -> google.protobuf.Empty
 	9, // [9:13] is the sub-list for method output_type
 	5, // [5:9] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name

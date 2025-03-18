@@ -7,6 +7,7 @@ import (
 	"github.com/rombintu/GophKeeper/internal/client/models"
 	apb "github.com/rombintu/GophKeeper/internal/proto/auth"
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
+	spb "github.com/rombintu/GophKeeper/internal/proto/sync"
 	"github.com/rombintu/GophKeeper/internal/storage"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -148,13 +149,14 @@ func (m *Manager) Sync(ctx context.Context, serviceAddr string) error {
 		return err
 	}
 
-	syncClient := apb.NewAuthClient(conn)
-	resp, err := syncClient.Sync(ctx, &spb.SyncRequest{User: m.profile.user, Secrets: secretsForSync})
+	syncClient := spb.NewSyncClient(conn)
+	resp, err := syncClient.Proccess(
+		ctx, &spb.SyncRequest{Email: m.profile.user.GetEmail(), Secrets: secretsForSync})
 	if err != nil {
 		return err
 	}
 
-	if err := m.store.SecretCreateBatch(ctx, resp.Secrets); err != nil {
+	if err := m.store.SecretCreateBatch(ctx, resp.GetSecrets()); err != nil {
 		slog.Error("failed pull secrets", slog.String("error", err.Error()))
 		return err
 	}
