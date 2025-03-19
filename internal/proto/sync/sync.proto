@@ -16,5 +16,5 @@ message SyncResponse {
 }
 
 service Sync {
-    rpc Proccess(SyncRequest) returns (SyncResponse);
+    rpc Process(SyncRequest) returns (SyncResponse);
 }

@@ -11,7 +11,7 @@ import (
 )
 
 func (s *SyncService) Process(ctx context.Context, in *spb.SyncRequest) (*spb.SyncResponse, error) {
-	keeperConn, err := s.Pool.Get(s.config.KeeperServiceAddress)
+	keeperConn, err := s.pool.Get(s.config.KeeperServiceAddress)
 	if err != nil {
 		slog.Error("message", slog.String("func",
 			common.DotJoin(ServiceName, "Process", "Get")), slog.String("error", err.Error()))

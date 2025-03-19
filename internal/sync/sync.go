@@ -7,6 +7,7 @@ import (
 
 	"github.com/rombintu/GophKeeper/internal"
 	"github.com/rombintu/GophKeeper/internal/config"
+	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	spb "github.com/rombintu/GophKeeper/internal/proto/sync"
 	"github.com/rombintu/GophKeeper/lib/common"
 	"github.com/rombintu/GophKeeper/lib/connections"
@@ -21,8 +22,9 @@ const (
 
 type SyncService struct {
 	spb.UnimplementedSyncServer
-	config config.SyncConfig
-	Pool   *connections.ConnPool
+	config         config.SyncConfig
+	pool           *connections.ConnPool
+	TestClientConn kpb.KeeperClient
 }
 
 func NewSyncService(cfg config.SyncConfig) internal.Service {
@@ -66,11 +68,11 @@ func (s *SyncService) Start() error {
 }
 
 func (s *SyncService) Shutdown() error {
-	s.Pool.CleanUp()
+	s.pool.CleanUp()
 	return nil
 }
 
 func (s *SyncService) Configure() error {
-	s.Pool = connections.NewConnPool()
+	s.pool = connections.NewConnPool()
 	return nil
 }
