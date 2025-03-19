@@ -153,7 +153,7 @@ func (m *Manager) Sync(ctx context.Context, serviceAddr string) error {
 	}
 
 	syncClient := spb.NewSyncClient(conn)
-	resp, err := syncClient.Proccess(
+	resp, err := syncClient.Process(
 		ctx, &spb.SyncRequest{Email: m.profile.user.GetEmail(), Secrets: secretsForSync})
 	if err != nil {
 		return err

@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SyncClient interface {
-	Proccess(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*SyncResponse, error)
+	Process(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*SyncResponse, error)
 }
 
 type syncClient struct {
@@ -29,9 +29,9 @@ func NewSyncClient(cc grpc.ClientConnInterface) SyncClient {
 	return &syncClient{cc}
 }
 
-func (c *syncClient) Proccess(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*SyncResponse, error) {
+func (c *syncClient) Process(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*SyncResponse, error) {
 	out := new(SyncResponse)
-	err := c.cc.Invoke(ctx, "/proto.sync.Sync/Proccess", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.sync.Sync/Process", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (c *syncClient) Proccess(ctx context.Context, in *SyncRequest, opts ...grpc
 // All implementations must embed UnimplementedSyncServer
 // for forward compatibility
 type SyncServer interface {
-	Proccess(context.Context, *SyncRequest) (*SyncResponse, error)
+	Process(context.Context, *SyncRequest) (*SyncResponse, error)
 	mustEmbedUnimplementedSyncServer()
 }
 
@@ -50,8 +50,8 @@ type SyncServer interface {
 type UnimplementedSyncServer struct {
 }
 
-func (UnimplementedSyncServer) Proccess(context.Context, *SyncRequest) (*SyncResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Proccess not implemented")
+func (UnimplementedSyncServer) Process(context.Context, *SyncRequest) (*SyncResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Process not implemented")
 }
 func (UnimplementedSyncServer) mustEmbedUnimplementedSyncServer() {}
 
@@ -66,20 +66,20 @@ func RegisterSyncServer(s grpc.ServiceRegistrar, srv SyncServer) {
 	s.RegisterService(&Sync_ServiceDesc, srv)
 }
 
-func _Sync_Proccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Sync_Process_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SyncRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SyncServer).Proccess(ctx, in)
+		return srv.(SyncServer).Process(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.sync.Sync/Proccess",
+		FullMethod: "/proto.sync.Sync/Process",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SyncServer).Proccess(ctx, req.(*SyncRequest))
+		return srv.(SyncServer).Process(ctx, req.(*SyncRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -92,8 +92,8 @@ var Sync_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*SyncServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Proccess",
-			Handler:    _Sync_Proccess_Handler,
+			MethodName: "Process",
+			Handler:    _Sync_Process_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
