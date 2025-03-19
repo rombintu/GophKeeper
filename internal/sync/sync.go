@@ -22,7 +22,7 @@ const (
 type SyncService struct {
 	spb.UnimplementedSyncServer
 	config config.SyncConfig
-	pool   *connections.ConnPool
+	Pool   *connections.ConnPool
 }
 
 func NewSyncService(cfg config.SyncConfig) internal.Service {
@@ -66,11 +66,11 @@ func (s *SyncService) Start() error {
 }
 
 func (s *SyncService) Shutdown() error {
-	s.pool.CleanUp()
+	s.Pool.CleanUp()
 	return nil
 }
 
 func (s *SyncService) Configure() error {
-	s.pool = connections.NewConnPool()
+	s.Pool = connections.NewConnPool()
 	return nil
 }
