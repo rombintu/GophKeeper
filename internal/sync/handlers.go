@@ -11,7 +11,7 @@ import (
 )
 
 func (s *SyncService) Process(ctx context.Context, in *spb.SyncRequest) (*spb.SyncResponse, error) {
-	keeperConn, err := s.pool.Get(s.config.KeeperServiceAddress)
+	keeperConn, err := s.Pool.Get(s.config.KeeperServiceAddress)
 	if err != nil {
 		slog.Error("message", slog.String("func",
 			common.DotJoin(ServiceName, "Process", "Get")), slog.String("error", err.Error()))
@@ -40,11 +40,9 @@ func (s *SyncService) Process(ctx context.Context, in *spb.SyncRequest) (*spb.Sy
 
 		if serverSecret, ok := serverSecretsMap[key]; !ok {
 			if serverSecret.Title == clientSecret.Title {
-				newSecret := updateVersion(clientSecret)
-				secretsToCreate = append(secretsToCreate, newSecret)
-			} else {
-				secretsToCreate = append(secretsToCreate, clientSecret)
+				clientSecret.Version += 1
 			}
+			secretsToCreate = append(secretsToCreate, clientSecret)
 		}
 	}
 
@@ -80,16 +78,4 @@ func (s *SyncService) getServerSecrets(ctx context.Context, email string, client
 		return nil, err
 	}
 	return resp.GetSecrets(), nil
-}
-
-func updateVersion(secret *kpb.Secret) *kpb.Secret {
-	return &kpb.Secret{
-		Title:       secret.Title,
-		SecretType:  secret.SecretType,
-		UserEmail:   secret.UserEmail,
-		CreatedAt:   secret.CreatedAt,
-		Version:     secret.Version + 1,
-		HashPayload: secret.HashPayload,
-		Payload:     append([]byte(nil), secret.Payload...),
-	}
 }
