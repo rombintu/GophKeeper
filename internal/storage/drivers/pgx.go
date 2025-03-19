@@ -111,7 +111,7 @@ func (d *PgxDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) error 
 	sql := `INSERT INTO secrets (
 		title, secret_type, user_email, version, hash_payload, payload
 		) VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (title) DO UPDATE SET version=version+1`
+		ON CONFLICT (title) DO UPDATE SET version = secrets.version+1`
 	if _, err := d.exec(ctx, sql,
 		secret.GetTitle(), secret.GetSecretType(),
 		secret.GetUserEmail(), secret.GetVersion(),
@@ -134,7 +134,7 @@ func (d *PgxDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret
 	sql := `INSERT INTO secrets (
 		title, secret_type, user_email, version, hash_payload, payload
 		) VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (title) DO UPDATE SET version=version+1`
+		ON CONFLICT (title) DO UPDATE SET version = secrets.version+1`
 
 	var errs []error
 	for _, s := range secrets {
@@ -151,7 +151,15 @@ func (d *PgxDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secret
 
 func (d *PgxDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.Secret, error) {
 	sql := `SELECT title, secret_type, user_email, created_at, version, hash_payload, payload 
-		FROM secrets WHERE user_email=$1`
+		FROM secrets s 
+		INNER JOIN (
+		SELECT id, MAX(version) AS max_version
+			FROM secrets
+			GROUP BY id
+		) AS sub
+		ON s.id = sub.id AND s.version = sub.max_version
+		WHERE user_email=$1
+		`
 	rows, err := d.queryRows(ctx, sql, userEmail)
 	if err != nil {
 		return nil, err
