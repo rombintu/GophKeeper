@@ -11,14 +11,7 @@ import (
 )
 
 func (s *SyncService) Process(ctx context.Context, in *spb.SyncRequest) (*spb.SyncResponse, error) {
-	keeperConn, err := s.pool.Get(s.config.KeeperServiceAddress)
-	if err != nil {
-		slog.Error("message", slog.String("func",
-			common.DotJoin(ServiceName, "Process", "Get")), slog.String("error", err.Error()))
-		return nil, err
-	}
-	keeperClient := kpb.NewKeeperClient(keeperConn)
-	serverSecrets, err := s.getServerSecrets(ctx, in.GetEmail(), keeperClient)
+	serverSecrets, err := s.getServerSecrets(ctx, in.GetEmail())
 	if err != nil {
 		slog.Error("message", slog.String("func",
 			common.DotJoin(ServiceName, "Process", "getServerSecrets")), slog.String("error", err.Error()))
@@ -47,7 +40,7 @@ func (s *SyncService) Process(ctx context.Context, in *spb.SyncRequest) (*spb.Sy
 	}
 
 	if len(secretsToCreate) > 0 {
-		_, err := keeperClient.CreateMany(ctx, &kpb.CreateBatchRequest{UserEmail: in.Email, Secrets: secretsToCreate})
+		_, err := s.keeper.CreateMany(ctx, &kpb.CreateBatchRequest{UserEmail: in.Email, Secrets: secretsToCreate})
 		if err != nil {
 			slog.Error("message", slog.String("func",
 				common.DotJoin(ServiceName, "Process", "CreateMany")), slog.String("error", err.Error()))
@@ -70,8 +63,8 @@ func (s *SyncService) Process(ctx context.Context, in *spb.SyncRequest) (*spb.Sy
 	}, nil
 }
 
-func (s *SyncService) getServerSecrets(ctx context.Context, email string, client kpb.KeeperClient) ([]*kpb.Secret, error) {
-	resp, err := client.Fetch(ctx, &kpb.FetchRequest{UserEmail: email})
+func (s *SyncService) getServerSecrets(ctx context.Context, email string) ([]*kpb.Secret, error) {
+	resp, err := s.keeper.Fetch(ctx, &kpb.FetchRequest{UserEmail: email})
 	if err != nil {
 		slog.Error("message", slog.String("func",
 			common.DotJoin(ServiceName, "getServerSecrets", "Fetch")), slog.String("error", err.Error()))

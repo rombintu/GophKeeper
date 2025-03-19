@@ -24,7 +24,11 @@ func TestProcess_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockKeeper := mock_keeper.NewMockKeeperClient(ctrl)
-	service := sync.NewSyncService(config.SyncConfig{}).(*sync.SyncService)
+	service := sync.NewSyncService(config.SyncConfig{
+		Config: config.Config{
+			KeeperServiceAddress: "localhost:3202",
+		},
+	}, sync.SyncServiceOpts{KeeperClient: mockKeeper}).(*sync.SyncService)
 
 	service.Configure()
 
@@ -60,7 +64,11 @@ func TestProcess_VersionConflict(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockKeeper := mock_keeper.NewMockKeeperClient(ctrl)
-	service := sync.NewSyncService(config.SyncConfig{})
+	service := sync.NewSyncService(config.SyncConfig{
+		Config: config.Config{
+			KeeperServiceAddress: "localhost:3202",
+		},
+	}, sync.SyncServiceOpts{KeeperClient: mockKeeper}).(*sync.SyncService)
 	require.NoError(t, service.Configure())
 
 	req := &spb.SyncRequest{
@@ -83,7 +91,7 @@ func TestProcess_VersionConflict(t *testing.T) {
 		},
 	)
 
-	resp, err := service.(*sync.SyncService).Process(context.Background(), req)
+	resp, err := service.Process(context.Background(), req)
 	require.NoError(t, err)
 	assert.True(t, resp.Success)
 }
@@ -94,14 +102,18 @@ func TestProcess_ErrorCases(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockKeeper := mock_keeper.NewMockKeeperClient(ctrl)
-		service := sync.NewSyncService(config.SyncConfig{})
+		service := sync.NewSyncService(config.SyncConfig{
+			Config: config.Config{
+				KeeperServiceAddress: "localhost:3202",
+			},
+		}, sync.SyncServiceOpts{KeeperClient: mockKeeper}).(*sync.SyncService)
 		require.NoError(t, service.Configure())
 
 		mockKeeper.EXPECT().Fetch(gomock.Any(), gomock.Any()).Return(
 			nil, status.Error(codes.Internal, "server error"),
 		)
 
-		_, err := service.(*sync.SyncService).Process(context.Background(), &spb.SyncRequest{})
+		_, err := service.Process(context.Background(), &spb.SyncRequest{})
 		require.Error(t, err)
 		assert.Equal(t, codes.Internal, status.Code(err))
 	})
@@ -111,7 +123,11 @@ func TestProcess_ErrorCases(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockKeeper := mock_keeper.NewMockKeeperClient(ctrl)
-		service := sync.NewSyncService(config.SyncConfig{})
+		service := sync.NewSyncService(config.SyncConfig{
+			Config: config.Config{
+				KeeperServiceAddress: "localhost:3202",
+			},
+		}, sync.SyncServiceOpts{KeeperClient: mockKeeper}).(*sync.SyncService)
 		require.NoError(t, service.Configure())
 
 		mockKeeper.EXPECT().Fetch(gomock.Any(), gomock.Any()).Return(
@@ -122,7 +138,7 @@ func TestProcess_ErrorCases(t *testing.T) {
 			nil, status.Error(codes.Internal, "create error"),
 		)
 
-		_, err := service.(*sync.SyncService).Process(context.Background(), &spb.SyncRequest{
+		_, err := service.Process(context.Background(), &spb.SyncRequest{
 			Secrets: []*kpb.Secret{{}},
 		})
 		require.Error(t, err)

@@ -10,7 +10,6 @@ import (
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	spb "github.com/rombintu/GophKeeper/internal/proto/sync"
 	"github.com/rombintu/GophKeeper/lib/common"
-	"github.com/rombintu/GophKeeper/lib/connections"
 	"github.com/rombintu/GophKeeper/lib/jwt"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
@@ -22,14 +21,18 @@ const (
 
 type SyncService struct {
 	spb.UnimplementedSyncServer
-	config         config.SyncConfig
-	pool           *connections.ConnPool
-	TestClientConn kpb.KeeperClient
+	config config.SyncConfig
+	keeper kpb.KeeperClient
 }
 
-func NewSyncService(cfg config.SyncConfig) internal.Service {
+type SyncServiceOpts struct {
+	KeeperClient kpb.KeeperClient
+}
+
+func NewSyncService(cfg config.SyncConfig, opts SyncServiceOpts) internal.Service {
 	return &SyncService{
 		config: cfg,
+		keeper: opts.KeeperClient,
 	}
 }
 
@@ -68,11 +71,9 @@ func (s *SyncService) Start() error {
 }
 
 func (s *SyncService) Shutdown() error {
-	s.pool.CleanUp()
 	return nil
 }
 
 func (s *SyncService) Configure() error {
-	s.pool = connections.NewConnPool()
 	return nil
 }
