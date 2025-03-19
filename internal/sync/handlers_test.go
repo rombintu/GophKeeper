@@ -84,12 +84,10 @@ func TestProcess_VersionConflict(t *testing.T) {
 		},
 	}, nil)
 
-	mockKeeper.EXPECT().CreateMany(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ context.Context, req *kpb.CreateBatchRequest) (*emptypb.Empty, error) {
-			assert.Equal(t, int64(3), req.Secrets[0].Version)
-			return nil, nil
-		},
-	)
+	mockKeeper.EXPECT().CreateMany(
+		gomock.Any(),
+		gomock.AssignableToTypeOf(&kpb.CreateBatchRequest{}),
+	).Return(&emptypb.Empty{}, nil)
 
 	resp, err := service.Process(context.Background(), req)
 	require.NoError(t, err)

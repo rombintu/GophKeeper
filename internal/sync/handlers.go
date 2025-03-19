@@ -31,10 +31,24 @@ func (s *SyncService) Process(ctx context.Context, in *spb.SyncRequest) (*spb.Sy
 		key := fmt.Sprintf("%s:%s", clientSecret.Title, clientSecret.HashPayload)
 		clientSecretsMap[key] = clientSecret
 
-		if serverSecret, ok := serverSecretsMap[key]; !ok {
+		_, keyExists := serverSecretsMap[key]
+		sameTitleExists := false
+		var maxVersion int64 = 0
+
+		for _, serverSecret := range serverSecrets {
 			if serverSecret.Title == clientSecret.Title {
-				clientSecret.Version += 1
+				sameTitleExists = true
+				if serverSecret.Version > maxVersion {
+					maxVersion = serverSecret.Version
+				}
 			}
+		}
+
+		if !keyExists && sameTitleExists {
+			newSecret := cloneSecret(clientSecret)
+			newSecret.Version = maxVersion + 1
+			secretsToCreate = append(secretsToCreate, newSecret)
+		} else if !keyExists {
 			secretsToCreate = append(secretsToCreate, clientSecret)
 		}
 	}
@@ -71,4 +85,16 @@ func (s *SyncService) getServerSecrets(ctx context.Context, email string) ([]*kp
 		return nil, err
 	}
 	return resp.GetSecrets(), nil
+}
+
+func cloneSecret(secret *kpb.Secret) *kpb.Secret {
+	return &kpb.Secret{
+		Title:       secret.Title,
+		SecretType:  secret.SecretType,
+		UserEmail:   secret.UserEmail,
+		CreatedAt:   secret.CreatedAt,
+		Version:     secret.Version,
+		HashPayload: secret.HashPayload,
+		Payload:     append([]byte(nil), secret.Payload...),
+	}
 }
