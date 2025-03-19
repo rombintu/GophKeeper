@@ -1,7 +1,6 @@
 package sync
 
 import (
-	"context"
 	"log/slog"
 	"net"
 	"time"
@@ -9,8 +8,8 @@ import (
 	"github.com/rombintu/GophKeeper/internal"
 	"github.com/rombintu/GophKeeper/internal/config"
 	spb "github.com/rombintu/GophKeeper/internal/proto/sync"
-	"github.com/rombintu/GophKeeper/internal/storage"
 	"github.com/rombintu/GophKeeper/lib/common"
+	"github.com/rombintu/GophKeeper/lib/connections"
 	"github.com/rombintu/GophKeeper/lib/jwt"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
@@ -22,13 +21,12 @@ const (
 
 type SyncService struct {
 	spb.UnimplementedSyncServer
-	store  storage.ClientManager
 	config config.SyncConfig
+	pool   *connections.ConnPool
 }
 
-func NewSyncService(store storage.ClientManager, cfg config.SyncConfig) internal.Service {
+func NewSyncService(cfg config.SyncConfig) internal.Service {
 	return &SyncService{
-		store:  store,
 		config: cfg,
 	}
 }
@@ -41,10 +39,6 @@ func (s *SyncService) HealthCheck(duration time.Duration) {
 
 		// TODO: отправка в API статус сервиса
 		slog.Debug("health check service", slog.String("service", ServiceName))
-		ctx := context.Background()
-		if err := s.store.Ping(ctx, true); err != nil {
-			slog.Warn("ping failed", slog.String("error", err.Error()))
-		}
 	}
 }
 
@@ -72,9 +66,11 @@ func (s *SyncService) Start() error {
 }
 
 func (s *SyncService) Shutdown() error {
-	return s.store.Close(context.Background())
+	s.pool.CleanUp()
+	return nil
 }
 
 func (s *SyncService) Configure() error {
-	return s.store.Open(context.Background())
+	s.pool = connections.NewConnPool()
+	return nil
 }

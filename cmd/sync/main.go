@@ -7,7 +7,6 @@ import (
 	"syscall"
 
 	"github.com/rombintu/GophKeeper/internal/config"
-	"github.com/rombintu/GophKeeper/internal/storage"
 	"github.com/rombintu/GophKeeper/internal/sync"
 	"github.com/rombintu/GophKeeper/lib/common"
 	"github.com/rombintu/GophKeeper/lib/logger"
@@ -30,10 +29,7 @@ func main() {
 	logger.InitLogger(cfg.Env)
 	common.Version(buildVersion, buildDate, buildCommit, sync.ServiceName)
 
-	store := storage.NewClientManager(storage.DriverOpts{
-		ServiceName: sync.ServiceName,
-		DriverPath:  cfg.DriverPath})
-	service := sync.NewSyncService(store, cfg)
+	service := sync.NewSyncService(cfg)
 
 	if err := service.Configure(); err != nil {
 		panic(err)

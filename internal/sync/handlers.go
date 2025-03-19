@@ -1,18 +1,95 @@
 package sync
 
-// import (
-// 	"context"
-// 	"log/slog"
+import (
+	"context"
+	"fmt"
+	"log/slog"
 
-// 	spb "github.com/rombintu/GophKeeper/internal/proto/sync"
-// 	"github.com/rombintu/GophKeeper/lib/common"
-// 	"google.golang.org/protobuf/types/known/emptypb"
-// )
+	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
+	spb "github.com/rombintu/GophKeeper/internal/proto/sync"
+	"github.com/rombintu/GophKeeper/lib/common"
+)
 
-// func (s *SyncService) SyncPush(ctx context.Context, in *spb.SyncRequest) (*spb.SyncResponse, error) {
-// 	s.store.Get(ctx, )
-// }
+func (s *SyncService) Process(ctx context.Context, in *spb.SyncRequest) (*spb.SyncResponse, error) {
+	keeperConn, err := s.pool.Get(s.config.KeeperServiceAddress)
+	if err != nil {
+		slog.Error("message", slog.String("func",
+			common.DotJoin(ServiceName, "Process", "Get")), slog.String("error", err.Error()))
+		return nil, err
+	}
+	keeperClient := kpb.NewKeeperClient(keeperConn)
+	serverSecrets, err := s.getServerSecrets(ctx, in.GetEmail(), keeperClient)
+	if err != nil {
+		slog.Error("message", slog.String("func",
+			common.DotJoin(ServiceName, "Process", "getServerSecrets")), slog.String("error", err.Error()))
+		return nil, err
+	}
 
-// func (s *SyncService) SyncPull(ctx context.Context, in *spb.SyncRequest) (*spb.SyncResponse, error) {
+	serverSecretsMap := make(map[string]*kpb.Secret)
+	clientSecretsMap := make(map[string]*kpb.Secret)
 
-// }
+	for _, secret := range serverSecrets {
+		key := fmt.Sprintf("%s:%s", secret.GetTitle(), secret.GetHashPayload())
+		serverSecretsMap[key] = secret
+	}
+
+	var secretsToCreate []*kpb.Secret
+	for _, clientSecret := range in.Secrets {
+		key := fmt.Sprintf("%s:%s", clientSecret.Title, clientSecret.HashPayload)
+		clientSecretsMap[key] = clientSecret
+
+		if serverSecret, ok := serverSecretsMap[key]; !ok {
+			if serverSecret.Title == clientSecret.Title {
+				newSecret := updateVersion(clientSecret)
+				secretsToCreate = append(secretsToCreate, newSecret)
+			} else {
+				secretsToCreate = append(secretsToCreate, clientSecret)
+			}
+		}
+	}
+
+	if len(secretsToCreate) > 0 {
+		_, err := keeperClient.CreateMany(ctx, &kpb.CreateBatchRequest{UserEmail: in.Email, Secrets: secretsToCreate})
+		if err != nil {
+			slog.Error("message", slog.String("func",
+				common.DotJoin(ServiceName, "Process", "CreateMany")), slog.String("error", err.Error()))
+			return nil, err
+		}
+	}
+
+	var clientMissingSecrets []*kpb.Secret
+	for _, serverSecret := range serverSecrets {
+		key := fmt.Sprintf("%s:%s", serverSecret.Title, serverSecret.HashPayload)
+		if _, ok := clientSecretsMap[key]; !ok {
+			clientMissingSecrets = append(clientMissingSecrets, serverSecret)
+		}
+	}
+
+	return &spb.SyncResponse{
+		Email:   in.Email,
+		Secrets: clientMissingSecrets,
+		Success: true,
+	}, nil
+}
+
+func (s *SyncService) getServerSecrets(ctx context.Context, email string, client kpb.KeeperClient) ([]*kpb.Secret, error) {
+	resp, err := client.Fetch(ctx, &kpb.FetchRequest{UserEmail: email})
+	if err != nil {
+		slog.Error("message", slog.String("func",
+			common.DotJoin(ServiceName, "getServerSecrets", "Fetch")), slog.String("error", err.Error()))
+		return nil, err
+	}
+	return resp.GetSecrets(), nil
+}
+
+func updateVersion(secret *kpb.Secret) *kpb.Secret {
+	return &kpb.Secret{
+		Title:       secret.Title,
+		SecretType:  secret.SecretType,
+		UserEmail:   secret.UserEmail,
+		CreatedAt:   secret.CreatedAt,
+		Version:     secret.Version + 1,
+		HashPayload: secret.HashPayload,
+		Payload:     append([]byte(nil), secret.Payload...),
+	}
+}
