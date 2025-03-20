@@ -18,6 +18,12 @@ import (
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 )
 
+type key string
+
+const (
+	testKey key = "test"
+)
+
 type PgxDriver struct {
 	dbURL       string
 	serviceName string
@@ -189,14 +195,8 @@ func (d *PgxDriver) SecretPurge(ctx context.Context, secret *kpb.Secret) error {
 	return nil
 }
 
-func (d *PgxDriver) autoDefaultMigrate() error {
-	mpath, err := filepath.Abs(
-		filepath.Join("internal", "storage", "migrations"))
-	if err != nil {
-		return err
-	}
+func (d *PgxDriver) autoDefaultMigrate(mpath string) error {
 
-	slog.Debug("migration init", slog.String("path", mpath))
 	migr, err := migrate.New(
 		fmt.Sprintf("file://%s", mpath),
 		d.dbURL,
@@ -208,8 +208,20 @@ func (d *PgxDriver) autoDefaultMigrate() error {
 }
 
 func (d *PgxDriver) Configure(ctx context.Context) error {
-	if err := d.autoDefaultMigrate(); err != nil {
+	mpath, err := filepath.Abs(
+		filepath.Join("internal", "storage", "migrations"))
+	if err != nil {
+		return err
+	}
+
+	slog.Debug("migration init", slog.String("path", mpath))
+	istest := ctx.Value(testKey)
+	if istest != nil && istest == true {
+		mpath = "/tmp/migrations"
+	}
+	if err := d.autoDefaultMigrate(mpath); err != nil {
 		slog.Warn("auto migration failed or skip", slog.String("message", err.Error()))
+		return err
 	}
 	return nil
 }
