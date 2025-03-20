@@ -11,12 +11,17 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+type ConnPoolAdapter interface {
+	Get(addr string) (*grpc.ClientConn, error)
+	CleanUp()
+}
+
 type ConnPool struct {
 	mu    sync.Mutex
 	conns map[string]*grpc.ClientConn
 }
 
-func NewConnPool() *ConnPool {
+func NewConnPool() ConnPoolAdapter {
 	return &ConnPool{
 		conns: make(map[string]*grpc.ClientConn),
 	}

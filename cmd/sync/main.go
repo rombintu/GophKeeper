@@ -1,13 +1,13 @@
 package main
 
 import (
+	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/rombintu/GophKeeper/internal/config"
-	"github.com/rombintu/GophKeeper/internal/storage"
 	"github.com/rombintu/GophKeeper/internal/sync"
 	"github.com/rombintu/GophKeeper/lib/common"
 	"github.com/rombintu/GophKeeper/lib/logger"
@@ -30,19 +30,17 @@ func main() {
 	logger.InitLogger(cfg.Env)
 	common.Version(buildVersion, buildDate, buildCommit, sync.ServiceName)
 
-	store := storage.NewClientManager(storage.DriverOpts{
-		ServiceName: sync.ServiceName,
-		DriverPath:  cfg.DriverPath})
-	service := sync.NewSyncService(store, cfg)
+	// TODO
+	service := sync.NewSyncService(cfg, sync.SyncServiceOpts{})
 
 	if err := service.Configure(); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	go service.HealthCheck(cfg.HealthCheckDuration)
 	go func() {
 		if err := service.Start(); err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}()
 
