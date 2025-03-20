@@ -22,7 +22,6 @@ message Secret {
 
 message FetchRequest {
     string user_email = 1;
-    int64 version = 2;
 }
 
 message FetchResponse {

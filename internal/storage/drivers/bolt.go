@@ -81,7 +81,9 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback() //nolint:errcheck
+	}()
 
 	dataBucket := tx.Bucket([]byte(secretsTable))
 	metaBucket := tx.Bucket([]byte(metaTable))
@@ -290,9 +292,7 @@ func (bd *BoltDriver) SecretCreateBatch(ctx context.Context, secrets []*kpb.Secr
 		return err
 	}
 	defer func() {
-		if err := tx.Rollback(); err != nil {
-			slog.Error(err.Error())
-		}
+		_ = tx.Rollback() //nolint:errcheck
 	}()
 
 	dataBucket := tx.Bucket([]byte(secretsTable))

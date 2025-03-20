@@ -62,9 +62,9 @@ func TestMemoryDriver_SecretList(t *testing.T) {
 		t.Error("failed open memdb", err)
 	}
 
-	s1 := &kpb.Secret{Title: "test", UserEmail: "1", Version: 0}
-	s2 := &kpb.Secret{Title: "test", UserEmail: "1", Version: 1}
-	s3 := &kpb.Secret{Title: "test", UserEmail: "2", Version: 0}
+	s1 := &kpb.Secret{Title: "test", UserEmail: "1"}
+	s2 := &kpb.Secret{Title: "test", UserEmail: "1"}
+	s3 := &kpb.Secret{Title: "test", UserEmail: "2"}
 	md.Secrets = append(md.Secrets,
 		s1, s2, s3,
 	)
@@ -91,7 +91,7 @@ func TestMemoryDriver_SecretList(t *testing.T) {
 		},
 		{
 			name:     "1_user_id_notfounded",
-			args:     args{UserEmail: "1"},
+			args:     args{UserEmail: "3"},
 			wantSize: 0,
 			wantErr:  false,
 		},
