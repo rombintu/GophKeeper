@@ -67,12 +67,24 @@ func (p *ConnPool) checkHealth(conn *grpc.ClientConn) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
+	// Проверяем состояние соединения
 	state := conn.GetState()
-	if state == connectivity.Ready {
+	switch state {
+	case connectivity.Ready:
+		// Если соединение в состоянии Ready, считаем его здоровым
 		return true
+	case connectivity.TransientFailure, connectivity.Shutdown:
+		// Если соединение в состоянии сбоя или закрыто, считаем его нездоровым
+		return false
+	default:
+		// Для других состояний (Idle, Connecting) ждем изменения состояния
+		if conn.WaitForStateChange(ctx, state) {
+			newState := conn.GetState()
+			return newState == connectivity.Ready
+		}
+		// Если состояние не изменилось, считаем соединение нездоровым
+		return false
 	}
-
-	return conn.WaitForStateChange(ctx, state)
 }
 
 func RateLimitInterceptor(limiter *rate.Limiter) grpc.UnaryServerInterceptor {

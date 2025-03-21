@@ -7,6 +7,7 @@ cmd/sync/sync
 *.json
 
 profiles/*
+!profiles/coverage.svg
 !profiles/.gitkeep
 
 *.db
