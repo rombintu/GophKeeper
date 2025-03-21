@@ -9,7 +9,7 @@ import (
 	"github.com/rombintu/GophKeeper/internal/config"
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	spb "github.com/rombintu/GophKeeper/internal/proto/sync"
-	"github.com/rombintu/GophKeeper/lib/common"
+	"github.com/rombintu/GophKeeper/lib/connections"
 	"github.com/rombintu/GophKeeper/lib/jwt"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
@@ -57,7 +57,7 @@ func (s *SyncService) Start() error {
 
 	opts := []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(
-			common.RateLimitInterceptor(limiter),
+			connections.RateLimitInterceptor(limiter),
 			jwt.VerifyTokenInterceptor(s.config.Secret, []string{}),
 		),
 	}

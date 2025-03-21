@@ -82,7 +82,9 @@ func TestPgxDriver_UserCreate_Docker(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start PostgreSQL container: %v", err)
 	}
-	defer postgresContainer.Terminate(ctx) // Остановка контейнера после теста
+	defer func() {
+		_ = postgresContainer.Terminate(ctx) // nolint:errcheck
+	}()
 
 	// Инициализация PgxDriver
 	d := &PgxDriver{
@@ -117,7 +119,9 @@ func TestPgxDriver_SecretCreateBatch_Docker(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start PostgreSQL container: %v", err)
 	}
-	defer postgresContainer.Terminate(ctx) // Остановка контейнера после теста
+	defer func() {
+		_ = postgresContainer.Terminate(ctx) // nolint:errcheck
+	}()
 
 	// Инициализация PgxDriver
 	d := &PgxDriver{

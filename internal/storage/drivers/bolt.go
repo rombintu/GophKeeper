@@ -88,12 +88,6 @@ func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) erro
 	dataBucket := tx.Bucket([]byte(secretsTable))
 	metaBucket := tx.Bucket([]byte(metaTable))
 
-	// TODO найти секрет, если есть то Version + 1
-	// prefix := []byte(fmt.Sprintf("%s:::%s:::%s", secret.GetUserEmail(), secret.GetHashPayload()))
-	// cursor := metaBucket.Cursor()
-	// for k, v := cursor.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = cursor.Next() {
-
-	// }
 	metaBucket.Get([]byte(""))
 
 	meta := SecretMeta{

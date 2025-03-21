@@ -30,7 +30,9 @@ func TestProcess_Success(t *testing.T) {
 		},
 	}, sync.SyncServiceOpts{KeeperClient: mockKeeper}).(*sync.SyncService)
 
-	service.Configure()
+	if err := service.Configure(); err != nil {
+		t.Fatal(err)
+	}
 
 	// Setup mocks
 	req := &spb.SyncRequest{
