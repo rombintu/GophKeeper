@@ -13,6 +13,7 @@ import (
 	kpb "github.com/rombintu/GophKeeper/internal/proto/keeper"
 	"github.com/rombintu/GophKeeper/lib/crypto"
 	bolt "go.etcd.io/bbolt"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -26,7 +27,7 @@ type SecretMeta struct {
 	UserEmail   string
 	SecretType  kpb.Secret_SecretType
 	Version     int64
-	CreatedAt   int64
+	CreatedAt   *timestamppb.Timestamp
 	HashPayload string
 }
 
@@ -77,6 +78,9 @@ func (bd *BoltDriver) Configure(ctx context.Context) error {
 }
 
 func (bd *BoltDriver) SecretCreate(ctx context.Context, secret *kpb.Secret) error {
+	if bd.cryptoKey == nil {
+		return errors.New("crypto key is not set")
+	}
 	tx, err := bd.driver.Begin(true)
 	if err != nil {
 		return err

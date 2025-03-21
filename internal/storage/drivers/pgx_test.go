@@ -4,13 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"testing"
 	"time"
 
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	apb "github.com/rombintu/GophKeeper/internal/proto/auth"
@@ -20,17 +17,16 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-func setupPostgreSQLContainer(ctx context.Context) (testcontainers.Container, string, error) {
-	// Получаем абсолютный путь к директории migrations
-	migrationsPath, err := filepath.Abs(filepath.Join("..", "migrations"))
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to get absolute path for migrations: %w", err)
-	}
+var (
+	postgresContainer testcontainers.Container
+	connStr           string
+)
 
-	fmt.Println(migrationsPath)
+func setupPostgreSQLContainer(ctx context.Context) (testcontainers.Container, string, error) {
 
 	// Запрос для создания контейнера
 	req := testcontainers.ContainerRequest{
+		Name:         "pgx-test",
 		Image:        "postgres:latest",
 		ExposedPorts: []string{"5432/tcp"},
 		Env: map[string]string{
@@ -38,15 +34,8 @@ func setupPostgreSQLContainer(ctx context.Context) (testcontainers.Container, st
 			"POSTGRES_PASSWORD": "test",
 			"POSTGRES_DB":       "test",
 		},
+
 		WaitingFor: wait.ForLog("database system is ready to accept connections").WithStartupTimeout(30 * time.Second),
-		HostConfigModifier: func(hostConfig *container.HostConfig) {
-			// Монтирование директории
-			hostConfig.Mounts = append(hostConfig.Mounts, mount.Mount{
-				Type:   mount.TypeBind,
-				Source: migrationsPath,    // Путь на хосте
-				Target: "/tmp/migrations", // Путь в контейнере
-			})
-		},
 	}
 
 	// Запуск контейнера
@@ -74,17 +63,33 @@ func setupPostgreSQLContainer(ctx context.Context) (testcontainers.Container, st
 	return postgresContainer, connStr, nil
 }
 
-func TestPgxDriver_UserCreate_Docker(t *testing.T) {
+func TestMain(m *testing.M) {
 	ctx := context.Background()
 
-	// Запуск контейнера PostgreSQL
-	postgresContainer, connStr, err := setupPostgreSQLContainer(ctx)
+	// Запуск контейнера
+	var err error
+	postgresContainer, connStr, err = setupPostgreSQLContainer(ctx)
 	if err != nil {
-		t.Fatalf("Failed to start PostgreSQL container: %v", err)
+		fmt.Printf("Failed to start PostgreSQL container: %v\n", err)
+		os.Exit(1)
 	}
-	defer func() {
-		_ = postgresContainer.Terminate(ctx) // nolint:errcheck
-	}()
+
+	// Запуск тестов
+	code := m.Run()
+
+	// Остановка контейнера после завершения тестов
+	if postgresContainer != nil {
+		if err := postgresContainer.Terminate(ctx); err != nil {
+			fmt.Printf("Failed to terminate PostgreSQL container: %v\n", err)
+		}
+	}
+
+	// Завершение с кодом возврата тестов
+	os.Exit(code)
+}
+
+func TestPgxDriver_UserCreate_Docker(t *testing.T) {
+	ctx := context.Background()
 
 	// Инициализация PgxDriver
 	d := &PgxDriver{
@@ -102,7 +107,7 @@ func TestPgxDriver_UserCreate_Docker(t *testing.T) {
 	user := &apb.User{Email: "test@example.com", KeyChecksum: []byte("checksum")}
 
 	// Тест
-	err = d.UserCreate(ctx, user)
+	err := d.UserCreate(ctx, user)
 	assert.NoError(t, err, "UserCreate should not return an error")
 
 	// Проверка, что пользователь создан
@@ -113,15 +118,6 @@ func TestPgxDriver_UserCreate_Docker(t *testing.T) {
 }
 func TestPgxDriver_SecretCreateBatch_Docker(t *testing.T) {
 	ctx := context.Background()
-
-	// Запуск контейнера PostgreSQL
-	postgresContainer, connStr, err := setupPostgreSQLContainer(ctx)
-	if err != nil {
-		t.Fatalf("Failed to start PostgreSQL container: %v", err)
-	}
-	defer func() {
-		_ = postgresContainer.Terminate(ctx) // nolint:errcheck
-	}()
 
 	// Инициализация PgxDriver
 	d := &PgxDriver{
@@ -135,11 +131,6 @@ func TestPgxDriver_SecretCreateBatch_Docker(t *testing.T) {
 	testCtx := context.WithValue(ctx, testKey, true)
 	if err := d.Configure(testCtx); err != nil {
 		t.Fatal(err)
-	}
-	// Подготовка данных
-	user := &apb.User{Email: "test@example.com", KeyChecksum: []byte("checksum")}
-	if err := d.UserCreate(ctx, user); err != nil {
-		t.Fatalf("Failed to create user: %v", err)
 	}
 
 	// Тестовые данные
@@ -163,7 +154,7 @@ func TestPgxDriver_SecretCreateBatch_Docker(t *testing.T) {
 	}
 
 	// Тест
-	err = d.SecretCreateBatch(ctx, secrets)
+	err := d.SecretCreateBatch(ctx, secrets)
 	assert.NoError(t, err, "SecretCreateBatch should not return an error")
 
 	// Проверка, что секреты созданы
@@ -172,16 +163,15 @@ func TestPgxDriver_SecretCreateBatch_Docker(t *testing.T) {
 	assert.Len(t, foundSecrets, 2, "Expected 2 secrets")
 }
 func TestPgxDriver_Ping(t *testing.T) {
-	dbPath := os.Getenv("PGX_DB_PATH")
 	ctx := context.Background()
+
+	// Инициализация PgxDriver
 	d := &PgxDriver{
-		dbURL:       dbPath,
+		dbURL:       connStr,
 		serviceName: "test",
 	}
-
 	if err := d.Open(ctx); err != nil {
-		t.Skipf("Skipping test due to database connection error: %v", err)
-		return
+		t.Fatalf("Failed to open database connection: %v", err)
 	}
 
 	tests := []struct {

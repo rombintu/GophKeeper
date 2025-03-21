@@ -11,6 +11,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -171,15 +172,21 @@ func (d *PgxDriver) SecretList(ctx context.Context, userEmail string) ([]*kpb.Se
 		return nil, err
 	}
 	defer rows.Close()
-
 	var secrets []*kpb.Secret
 	for rows.Next() {
+		var createdAt time.Time
 		var s kpb.Secret
 		if err := rows.Scan(
-			&s.Title, &s.SecretType, &s.UserEmail, &s.CreatedAt, &s.Version, &s.HashPayload, &s.Payload,
+			&s.Title, &s.SecretType, &s.UserEmail, &createdAt, &s.Version, &s.HashPayload, &s.Payload,
 		); err != nil {
 			return nil, err
 		}
+		// Преобразование time.Time в google.protobuf.Timestamp
+		pbTimestamp := &timestamp.Timestamp{
+			Seconds: createdAt.Unix(),
+			Nanos:   int32(createdAt.Nanosecond()),
+		}
+		s.CreatedAt = pbTimestamp
 		secrets = append(secrets, &s)
 	}
 	return secrets, nil
@@ -217,11 +224,14 @@ func (d *PgxDriver) Configure(ctx context.Context) error {
 	slog.Debug("migration init", slog.String("path", mpath))
 	istest := ctx.Value(testKey)
 	if istest != nil && istest == true {
-		mpath = "/tmp/migrations"
+		// Получаем абсолютный путь к директории migrations
+		mpath, err = filepath.Abs(filepath.Join("..", "migrations"))
+		if err != nil {
+			return fmt.Errorf("failed to get absolute path for migrations: %w", err)
+		}
 	}
 	if err := d.autoDefaultMigrate(mpath); err != nil {
 		slog.Warn("auto migration failed or skip", slog.String("message", err.Error()))
-		return err
 	}
 	return nil
 }

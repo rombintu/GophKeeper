@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -56,7 +57,7 @@ func TestSecretCreateAndRetrieve(t *testing.T) {
 		Payload:     []byte("secret_password_123"),
 		HashPayload: "hash123",
 		Version:     1,
-		CreatedAt:   time.Now().Unix(),
+		CreatedAt:   timestamppb.New(time.Now()),
 	}
 
 	// Сохранение секрета
@@ -157,17 +158,17 @@ func TestSecretBatchOperations(t *testing.T) {
 }
 
 func TestErrorHandling(t *testing.T) {
+	bd, _ := setupBoltDriver(t)
 	// Тест без криптографического ключа
 	t.Run("NoCryptoKey", func(t *testing.T) {
-		bd := NewBoltDriver("test.db", nil)
+		bd.cryptoKey = nil
 		err := bd.SecretCreate(context.Background(), &keeper.Secret{})
 		require.ErrorContains(t, err, "crypto key is not set")
 	})
 
 	// Тест с неверным ключом
 	t.Run("InvalidCryptoKey", func(t *testing.T) {
-		badKey, _ := openpgp.NewEntity("test", "", "test@bad.key", nil)
-		bd := NewBoltDriver("test.db", openpgp.EntityList{badKey})
+		bd.cryptoKey = openpgp.EntityList{}
 		err := bd.SecretCreate(context.Background(), &keeper.Secret{
 			UserEmail: testUserEmail,
 			Payload:   []byte("test"),
