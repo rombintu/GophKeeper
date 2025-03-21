@@ -13,6 +13,10 @@ import (
 	"github.com/rombintu/GophKeeper/lib/crypto"
 )
 
+const (
+	appDirName = "gophkeeper"
+)
+
 type Profile struct {
 	user     *proto.User
 	key      openpgp.EntityList

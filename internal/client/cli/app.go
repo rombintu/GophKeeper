@@ -13,10 +13,6 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-const (
-	appDirName = "gophkeeper"
-)
-
 type App struct {
 	Cmd *cli.Command
 }

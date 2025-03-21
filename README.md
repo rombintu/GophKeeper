@@ -1,4 +1,7 @@
-GophKeeper
+## GophKeeper
+
+cover tests  
+![coverage](profiles/coverage.svg)
 
 ### Схема сервисов
 ![alt text](img/schema.png "schema GophKeeper")
