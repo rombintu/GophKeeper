@@ -20,7 +20,9 @@ func TestNewProfile(t *testing.T) {
 	homeDirPath, err := getHomeDir()
 	require.NoError(t, err)
 	testProjectDirPath := path.Join(homeDirPath, testAppDirName)
-	defer os.RemoveAll(testProjectDirPath)
+	defer func() {
+		_ = os.RemoveAll(testProjectDirPath)
+	}()
 
 	// Создаем новый профиль
 	profile := NewProfile()
@@ -57,13 +59,18 @@ func TestCheckFileExists(t *testing.T) {
 	// Создаем временный файл
 	tmpFile, err := os.CreateTemp("", "test_file")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
 
 	// Проверяем, что файл существует
 	checkFileExists(tmpFile.Name())
 
 	// Удаляем файл и проверяем, что он был создан заново
-	os.Remove(tmpFile.Name())
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
+
 	checkFileExists(tmpFile.Name())
 
 	_, err = os.Stat(tmpFile.Name())
