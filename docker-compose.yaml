@@ -1,0 +1,55 @@
+version: '3.8'
+
+x-service-template: &service-template
+  build: 
+    context: ./
+    dockerfile: Dockerfile
+    args:
+      SERVICE_PATH: ""  # Переопределяется для каждого сервиса
+  env_file: .env
+  depends_on:
+    - db
+  command: ["./app"]
+
+services:
+  db:
+    image: postgres:latest
+    env_file:
+      - .env
+    volumes:
+    - postgres_data:/var/lib/postgresql/data
+    # - ./initdb:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+
+  auth:
+    <<: *service-template
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        SERVICE_PATH: "cmd/auth"  # Путь до main.go сервиса auth
+    ports:
+      - 3201:3201
+    
+
+  keeper:
+    <<: *service-template
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        SERVICE_PATH: "cmd/keeper" 
+
+  sync:
+    <<: *service-template
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        SERVICE_PATH: "cmd/sync" 
+    ports:
+      - 3203:3203
+
+volumes:
+  postgres_data:

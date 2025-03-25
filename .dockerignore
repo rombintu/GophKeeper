@@ -1,0 +1,12 @@
+cmd/auth/auth
+cmd/keeper/keeper
+cmd/sync/sync
+
+.vscode
+*.json
+
+profiles/*
+!profiles/.gitkeep
+
+*.db
+*.bolt
